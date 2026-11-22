@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Cartel Wars 3D - Imperio Táctico</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; font-family: 'Segoe UI', Roboto, sans-serif; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0c120a; color: #f5e6c8; }
+  #canvas-container { position: fixed; inset: 0; touch-action: none; }
+
+  .svg-ico { width: 20px; height: 20px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+  .svg-ico-sm { width: 15px; height: 15px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+  .svg-ico-lg { width: 24px; height: 24px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+
+  /* PANTALLA DE INICIO DE SESIÓN / REGISTRO ÚNICO */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 200;
+    background: radial-gradient(circle at center, rgba(28, 22, 14, 0.94), rgba(8, 10, 7, 0.98));
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .login-box {
+    width: 100%; max-width: 340px;
+    background: linear-gradient(180deg, #2b2116, #140f0a);
+    border: 2px solid #d4af37; border-radius: 16px; padding: 22px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.9); text-align: center;
+  }
+  .login-title { font-size: 21px; font-weight: 900; color: #f5d076; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .login-sub { font-size: 11px; color: #cbb692; margin-bottom: 14px; }
+  .login-input {
+    width: 100%; background: #0f0b07; border: 1.5px solid #8c6d3f; color: #fff;
+    padding: 10px 12px; border-radius: 9px; font-size: 16px; font-weight: 700;
+    margin-bottom: 8px; text-align: center;
+  }
+  .login-err { font-size: 10.5px; color: #ff7675; min-height: 16px; margin-bottom: 8px; font-weight: 700; }
+
+  /* HUD COMPACTO */
+  .hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+
+  .top-left-wrap {
+    position: absolute; top: calc(env(safe-area-inset-top, 6px) + 6px); left: 8px;
+    display: flex; align-items: center; gap: 6px; pointer-events: auto;
+  }
+  .profile-card {
+    display: flex; align-items: center; gap: 7px;
+    background: linear-gradient(180deg, rgba(26,20,14,0.94), rgba(12,9,6,0.97));
+    border: 1.5px solid #9e7b43; border-radius: 10px; padding: 4px 9px 4px 5px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.75);
+  }
+  .lvl-badge {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: linear-gradient(135deg, #f1c40f, #8e7006);
+    border: 1px solid #fff5c0; color: #1a1102;
+    font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center;
+  }
+  .player-tag { font-size: 10px; font-weight: 900; color: #fff; }
+  .rank-name { font-size: 8.5px; font-weight: 800; color: #f5d076; text-transform: uppercase; }
+  .xp-bar { width: 82px; height: 4px; background: #2c2219; border-radius: 3px; overflow: hidden; margin: 2px 0; border: 1px solid #5c4628; }
+  .xp-fill { height: 100%; background: linear-gradient(90deg, #2ecc71, #a3e4d7); width: 10%; transition: width 0.3s; }
+  .squad-txt { font-size: 8px; color: #cbb692; font-weight: 700; }
+
+  .btn-audio {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: rgba(20, 15, 10, 0.92); border: 1.5px solid #8c6d3f;
+    color: #f5d076; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.65);
+  }
+
+  .res-col {
+    position: absolute; top: calc(env(safe-area-inset-top, 6px) + 6px); right: 8px;
+    display: flex; flex-direction: column; gap: 4px; pointer-events: auto;
+  }
+  .res-pill {
+    display: flex; align-items: center; justify-content: space-between; gap: 7px;
+    min-width: 92px; background: rgba(14, 11, 8, 0.94);
+    border: 1px solid #785d34; border-radius: 12px; padding: 3px 9px 3px 6px;
+    font-size: 10.5px; font-weight: 800; box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+  }
+
+  #event-banner {
+    display: none; position: absolute; top: 68px; left: 8px; right: 108px;
+    background: linear-gradient(90deg, rgba(160, 25, 25, 0.95), rgba(90, 15, 15, 0.95));
+    border: 1px solid #ff7675; border-radius: 8px; padding: 5px 8px;
+    font-size: 9.5px; font-weight: 800; pointer-events: auto;
+    align-items: center; justify-content: space-between; gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.75);
+  }
+  .btn-event-act {
+    background: #f1c40f; color: #1a1102; border: none; border-radius: 5px;
+    padding: 4px 7px; font-weight: 900; font-size: 9px; white-space: nowrap;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  .timers-box {
+    position: absolute; top: 108px; left: 8px;
+    display: flex; flex-direction: column; gap: 4px; pointer-events: auto;
+  }
+  .timer-pill {
+    background: rgba(25, 20, 15, 0.94); border: 1px solid #d4af37;
+    border-radius: 8px; padding: 3px 7px; font-size: 9px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-skip {
+    background: #d4af37; color: #1a1204; border: none; border-radius: 5px;
+    padding: 2px 6px; font-weight: 900; font-size: 8.5px;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+
+  #toast {
+    position: fixed; top: 104px; left: 50%; transform: translateX(-50%);
+    background: rgba(20, 15, 10, 0.96); border: 1px solid #f1c40f; color: #fff;
+    padding: 6px 14px; border-radius: 16px; font-size: 10px; font-weight: 700;
+    opacity: 0; transition: opacity 0.25s; z-index: 150; white-space: nowrap;
+    max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.8);
+  }
+
+  .bottom-bar {
+    position: absolute; bottom: calc(env(safe-area-inset-bottom, 8px) + 8px); left: 8px; right: 8px;
+    display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none;
+  }
+  .btn-attack {
+    pointer-events: auto; width: 54px; height: 54px; border-radius: 14px;
+    background: linear-gradient(180deg, #e74c3c, #922b21);
+    border: 1.5px solid #f5b041; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    box-shadow: 0 5px 14px rgba(0,0,0,0.85); font-weight: 900; font-size: 8px;
+  }
+
+  .hud-btns { display: flex; gap: 6px; pointer-events: auto; }
+  .btn-act {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(180deg, #3a2d21, #1f1811);
+    border: 1.5px solid #9c7a44; color: #f5e6c8;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-size: 7.5px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.75);
+    position: relative;
+  }
+  .badge-alert {
+    position: absolute; top: -4px; right: -4px; background: #e74c3c; color: #fff;
+    font-size: 8px; font-weight: 900; width: 15px; height: 15px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; border: 1px solid #fff;
+  }
+
+  #place-hud {
+    display: none; position: fixed; bottom: calc(env(safe-area-inset-bottom, 10px) + 10px);
+    left: 50%; transform: translateX(-50%);
+    background: rgba(20, 16, 11, 0.96); border: 1.5px solid #d4af37;
+    border-radius: 12px; padding: 8px 14px; pointer-events: auto; z-index: 50;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.85); text-align: center; min-width: 245px;
+  }
+  .place-title { font-size: 10.5px; font-weight: 800; color: #f5d076; margin-bottom: 6px; }
+  .place-actions { display: flex; justify-content: center; gap: 8px; }
+  .btn-place-ok { background: #27ae60; border: 1px solid #a3e4d7; color: #fff; font-weight: 900; font-size: 10.5px; padding: 6px 12px; border-radius: 7px; }
+  .btn-place-cancel { background: #c0392b; border: 1px solid #ff9ff3; color: #fff; font-weight: 900; font-size: 10.5px; padding: 6px 10px; border-radius: 7px; }
+
+  #raid-hud { display: none; }
+  .raid-top {
+    position: absolute; top: calc(env(safe-area-inset-top, 6px) + 6px); left: 8px; right: 8px;
+    background: rgba(30, 14, 14, 0.95); border: 1.5px solid #e74c3c; border-radius: 10px;
+    padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; pointer-events: auto;
+  }
+  .troop-bar {
+    position: absolute; bottom: calc(env(safe-area-inset-bottom, 8px) + 8px); left: 8px; right: 8px;
+    display: flex; justify-content: center; gap: 8px; pointer-events: auto;
+  }
+  .t-slot {
+    background: linear-gradient(180deg, #2d241c, #18120d); border: 1.5px solid #8c6d3f;
+    border-radius: 10px; padding: 6px 10px; text-align: center; min-width: 72px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .t-slot.active { border-color: #2ecc71; background: #1c3320; transform: translateY(-3px); box-shadow: 0 4px 12px rgba(46,204,113,0.35); }
+
+  .sheet {
+    position: fixed; left: 10px; right: 10px; bottom: calc(env(safe-area-inset-bottom, 8px) + 66px);
+    background: linear-gradient(180deg, #292017, #15100b);
+    border: 1.5px solid #a68246; border-radius: 13px; padding: 12px;
+    display: none; pointer-events: auto; z-index: 45; max-height: 64dvh; overflow-y: auto;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.92);
+  }
+  .sheet.open { display: block; }
+  .s-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px; }
+  .s-title { font-size: 12.5px; font-weight: 900; color: #f5d076; display: flex; align-items: center; gap: 6px; }
+  .s-close { background: #4a3828; border: none; color: #fff; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: bold; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card {
+    background: rgba(0,0,0,0.45); border: 1px solid #6e5633; border-radius: 10px;
+    padding: 9px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .card h4 { font-size: 10.5px; color: #f5e6c8; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+  .card p { font-size: 9px; color: #b89f72; margin-bottom: 7px; line-height: 1.3; }
+  .btn-gold {
+    background: linear-gradient(180deg, #e5b84b, #b3831e); border: 1px solid #fff0b3;
+    color: #1c1304; font-weight: 900; font-size: 10px; padding: 6px; border-radius: 7px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .btn-repair {
+    background: linear-gradient(180deg, #e67e22, #b95309); border: 1px solid #fad7a0;
+    color: #fff; font-weight: 900; font-size: 10px; padding: 6px 10px; border-radius: 7px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .rival-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(0,0,0,0.48); border: 1px solid #5e492a; border-radius: 9px;
+    padding: 8px 10px; margin-bottom: 6px;
+  }
+  .rival-row.ruined {
+    border-color: #e74c3c; background: rgba(75, 18, 18, 0.45);
+  }
+  input.admin-inp, select.admin-inp {
+    width: 100%; background: #140f0a; border: 1px solid #8c6d3f; color: #fff;
+    padding: 6px; border-radius: 6px; font-size: 16px; margin-bottom: 6px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<!-- PANTALLA DE INICIO DE SESIÓN CON NOMBRE ÚNICO -->
+<div id="login-screen">
+  <div class="login-box">
+    <div style="margin-bottom:6px;" id="login-emblem"></div>
+    <div class="login-title">CARTEL WARS 3D</div>
+    <div class="login-sub">Funda tu Hacienda y domina el territorio en el servidor</div>
+    <input type="text" id="username-input" class="login-input" maxlength="18" placeholder="Ej: El_Patron_MX" />
+    <div class="login-err" id="login-error"></div>
+    <button class="btn-gold" style="width:100%;padding:10px;font-size:12px;" onclick="registerOrLoginPlayer()">ENTRAR AL TERRITORIO</button>
+  </div>
+</div>
+
+<div id="canvas-container"></div>
+
+<div class="hud">
+  <div id="toast">¡Bienvenido a tu Hacienda!</div>
+
+  <div id="base-hud">
+    <div class="top-left-wrap">
+      <div class="profile-card" onclick="handleProfileTap()">
+        <div class="lvl-badge" id="ui-lvl">1</div>
+        <div>
+          <div class="player-tag" id="ui-username">Patrón</div>
+          <div class="rank-name" id="ui-rank">Rango 1: Mandadero</div>
+          <div class="xp-bar"><div class="xp-fill" id="ui-xp-bar"></div></div>
+          <div class="squad-txt" id="ui-squad">Sicarios: 2/4 • Rangos ▸</div>
+        </div>
+      </div>
+      <button class="btn-audio" id="btn-audio-toggle" onclick="toggleAudioMute()" title="Sonido"></button>
+    </div>
+
+    <div class="res-col">
+      <div class="res-pill"><span id="ico-res-cash"></span><span id="ui-cash">650</span></div>
+      <div class="res-pill"><span id="ico-res-goods"></span><span id="ui-goods">180</span></div>
+      <div class="res-pill"><span id="ico-res-gold"></span><span id="ui-gold">25</span></div>
+    </div>
+
+    <div id="event-banner">
+      <span id="event-banner-txt" style="display:flex;align-items:center;gap:5px;"></span>
+      <button class="btn-event-act" id="event-banner-btn" onclick="resolveActiveEvent()"></button>
+    </div>
+
+    <div class="timers-box" id="timers-box"></div>
+
+    <div class="bottom-bar" id="main-bottom-bar">
+      <button class="btn-attack" onclick="openRivalRadar()">
+        <span id="ico-btn-attack"></span>
+        <span>ATACAR</span>
+      </button>
+
+      <div class="hud-btns">
+        <button class="btn-act" onclick="collectAll()">
+          <span id="ico-btn-collect"></span>
+          <span>RECOGER</span>
+        </button>
+        <button class="btn-act" onclick="openModal('upgrade')">
+          <span id="badge-ruins" class="badge-alert" style="display:none;">!</span>
+          <span id="ico-btn-upgrade"></span>
+          <span>MEJORAR</span>
+        </button>
+        <button class="btn-act" onclick="openModal('sicarios')">
+          <span id="ico-btn-sicarios"></span>
+          <span>SICARIOS</span>
+        </button>
+        <button class="btn-act" onclick="openModal('build')">
+          <span id="ico-btn-build"></span>
+          <span>CONSTRUIR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="place-hud">
+    <div class="place-title" id="place-label">Toca o arrastra donde quieres construir</div>
+    <div class="place-actions">
+      <button class="btn-place-cancel" onclick="cancelPlacement()">✕ Cancelar</button>
+      <button class="btn-place-ok" onclick="confirmPlacement()">✓ Construir Aquí</button>
+    </div>
+  </div>
+
+  <div id="raid-hud">
+    <div class="raid-top">
+      <div>
+        <div style="font-size:10.5px;font-weight:900;color:#ff7675;display:flex;align-items:center;gap:5px;" id="raid-target-name">INVADIENDO CAMPAMENTO</div>
+        <div style="font-size:9px;color:#dfe6e9;">Despliega tropas al sur • Toca un edificio para fijar objetivo</div>
+      </div>
+      <button class="btn-gold" style="background:#c0392b;color:#fff;border-color:#ff7675;padding:5px 9px;" onclick="endRaid(false)">Retirada</button>
+    </div>
+    <div class="troop-bar" id="troop-bar"></div>
+  </div>
+
+  <div class="sheet" id="modal-build">
+    <div class="s-head"><span class="s-title" id="title-modal-build">Nueva Construcción</span><button class="s-close" onclick="closeModals()">✕</button></div>
+    <div class="grid-2" id="build-list"></div>
+  </div>
+
+  <div class="sheet" id="modal-upgrade">
+    <div class="s-head"><span class="s-title" id="title-modal-upgrade">Mejorar o Reconstruir Edificios</span><button class="s-close" onclick="closeModals()">✕</button></div>
+    <div id="upgrade-list"></div>
+  </div>
+
+  <div class="sheet" id="modal-sicarios">
+    <div class="s-head"><span class="s-title" id="title-modal-sicarios">Reclutar Sicarios</span><button class="s-close" onclick="closeModals()">✕</button></div>
+    <div class="grid-2" id="sicario-list"></div>
+  </div>
+
+  <div class="sheet" id="modal-rivals">
+    <div class="s-head"><span class="s-title" id="title-modal-rivals">Campamentos de Otros Jugadores</span><button class="s-close" onclick="closeModals()">✕</button></div>
+    <div style="font-size:9.5px;color:#cbb692;margin-bottom:7px;">Selecciona un campamento enemigo para infiltrarte y saquear sus recursos:</div>
+    <div id="rivals-list"></div>
+  </div>
+
+  <div class="sheet" id="modal-ranks">
+    <div class="s-head"><span class="s-title" id="title-modal-ranks">Jerarquía del Cártel (10 Rangos)</span><button class="s-close" onclick="closeModals()">✕</button></div>
+    <div id="ranks-list" style="font-size:10.5px;line-height:1.5;color:#e5d3b3;"></div>
+  </div>
+
+  <!-- MODAL PANEL DE ADMINISTRADOR (OCULTO PARA JUGADORES NORMALES) -->
+  <div class="sheet" id="modal-admin">
+    <div class="s-head"><span class="s-title">Control Total de Infraestructura & Usuarios</span><button class="s-close" onclick="closeModals()">✕</button></div>
+    <div id="admin-content"></div>
+  </div>
+</div>
+
+<script>
+// ================= ICONOS VECTORIALES REALISTAS (SVG) =================
+const ICONS = {
+  emblem: `<svg viewBox="0 0 64 64" width="46" height="46"><defs><linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff0a6"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#8a6612"/></linearGradient></defs><polygon points="32,4 58,18 58,46 32,60 6,46 6,18" fill="#1e160d" stroke="url(#gGold)" stroke-width="3"/><path d="M18 42 L18 28 L32 18 L46 28 L46 42 Z" fill="url(#gGold)"/><rect x="28" y="31" width="8" height="11" fill="#1e160d"/><circle cx="32" cy="12" r="3" fill="#fff0a6"/></svg>`,
+  cash: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#27ae60" stroke="#a3e4d7" stroke-width="1.5"/><circle cx="12" cy="12" r="3.5" fill="#1e8449" stroke="#d5f5e3" stroke-width="1.2"/><path d="M5 8h2M17 16h2" stroke="#d5f5e3" stroke-width="1.5"/></svg>`,
+  goods: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#b9770e" stroke="#f5cba7" stroke-width="1.4"/><path d="M3 7l9 5 9-5M12 12v10" stroke="#f5cba7" stroke-width="1.4"/><path d="M7.5 4.5l9 5" stroke="#5d4037" stroke-width="2"/></svg>`,
+  gold: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><polygon points="6,17 9,9 15,9 18,17" fill="#f1c40f" stroke="#fff9c4" stroke-width="1.3"/><polygon points="2,20 5,13 10,13 12,20" fill="#d4ac0d" stroke="#fff9c4" stroke-width="1.1"/><polygon points="12,20 14,13 19,13 22,20" fill="#b7950b" stroke="#fff9c4" stroke-width="1.1"/></svg>`,
+  attack: `<svg class="svg-ico-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="2.5" fill="#f1c40f"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+  collect: `<svg class="svg-ico" viewBox="0 0 24 24"><path d="M12 3v11m0 0l-4-4m4 4l4-4" stroke="#2ecc71" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="16" width="18" height="5" rx="1.5" fill="#d4af37" stroke="#fff5c0" stroke-width="1.2"/></svg>`,
+  upgrade: `<svg class="svg-ico" viewBox="0 0 24 24"><polygon points="12,3 20,12 15,12 15,21 9,21 9,12 4,12" fill="#3498db" stroke="#d6eaf8" stroke-width="1.5"/></svg>`,
+  sicarios: `<svg class="svg-ico" viewBox="0 0 24 24"><path d="M2 10h15l3-2v4l-3 1h-4l-2 6H8l1.5-6H4l-2 2v-5z" fill="#bdc3c7" stroke="#ecf0f1" stroke-width="1.2"/><rect x="17" y="9" width="5" height="2" fill="#7f8c8d"/></svg>`,
+  build: `<svg class="svg-ico" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="#e67e22" stroke="#fdebd0" stroke-width="1.3"/></svg>`,
+  pistolero: `<svg class="svg-ico-lg" viewBox="0 0 24 24"><path d="M3 8h14v4h-5l-2 7H6l2-7H3V8z" fill="#cfd8dc" stroke="#fff" stroke-width="1.2"/><rect x="17" y="8.5" width="4" height="2.2" fill="#90a4ae"/></svg>`,
+  metralleta: `<svg class="svg-ico-lg" viewBox="0 0 24 24"><path d="M2 9h16v3.5h-4l1 5.5h-3l-1-5.5H8L6.5 18H4l1.5-5.5H2V9z" fill="#5dade2" stroke="#ebf5fb" stroke-width="1.2"/><rect x="18" y="9.5" width="4.5" height="2" fill="#aeb6bf"/></svg>`,
+  granadero: `<svg class="svg-ico-lg" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="6" ry="7" fill="#556b2f" stroke="#d4efdf" stroke-width="1.4"/><path d="M9 7h6v2H9zM12 4v3M14 5l3-1" stroke="#f1c40f" stroke-width="1.6" stroke-linecap="round"/><path d="M7 12h10M7 16h10M12 7v14" stroke="#2e4053" stroke-width="1.1"/></svg>`,
+  fire: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><path d="M12 2c1 4-2 6-2 9 0 2 1.5 3 3 3s3-1.5 3-4c2 2 3 4.5 3 7a7 7 0 1 1-14 0c0-4.5 3.5-8.5 7-15z" fill="#ff5722" stroke="#ffe082" stroke-width="1.2"/></svg>`,
+  police: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5.5-3.5 9.5-8 11-4.5-1.5-8-5.5-8-11V6l8-4z" fill="#1f618d" stroke="#85c1e9" stroke-width="1.5"/><polygon points="12,7 13.5,10 17,10.5 14.5,13 15,16.5 12,14.8 9,16.5 9.5,13 7,10.5 10.5,10" fill="#f1c40f"/></svg>`,
+  soundOn: `<svg class="svg-ico" viewBox="0 0 24 24"><polygon points="4,9 9,9 14,4 14,20 9,15 4,15" fill="#f5d076"/><path d="M17 8a5 5 0 0 1 0 8M19.5 5.5a8.5 8.5 0 0 1 0 13" fill="none" stroke="#f5d076" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+  soundOff: `<svg class="svg-ico" viewBox="0 0 24 24"><polygon points="4,9 9,9 14,4 14,20 9,15 4,15" fill="#7f8c8d"/><path d="M17 9l5 6M22 9l-5 6" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/></svg>`,
+  rank: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><polygon points="12,2 15,8 22,9 17,14 18,21 12,17.5 6,21 7,14 2,9 9,8" fill="#f1c40f" stroke="#fff59d" stroke-width="1.2"/></svg>`,
+  finca: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><polygon points="12,3 2,10 22,10" fill="#c0392b"/><rect x="4" y="10" width="16" height="11" fill="#f5cba7"/><rect x="10" y="14" width="4" height="7" fill="#5d4037"/></svg>`,
+  plantacion: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><path d="M12 21V9M12 15c-4 0-7-2-7-6 4 0 7 2 7 6zm0-3c4 0 7-2 7-6-4 0-7 2-7 6z" fill="#27ae60" stroke="#a9dfbf" stroke-width="1.2"/></svg>`,
+  boveda: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="#566573" stroke="#d5d8dc" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="none" stroke="#f1c40f" stroke-width="1.8"/></svg>`,
+  torreta: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><polygon points="7,21 9,9 15,9 17,21" fill="#7f8c8d"/><rect x="6" y="5" width="12" height="4" fill="#2c3e50"/><rect x="16" y="6" width="6" height="2" fill="#e74c3c"/></svg>`,
+  barracon: `<svg class="svg-ico-sm" viewBox="0 0 24 24"><polygon points="12,4 2,19 22,19" fill="#4b5320" stroke="#a9dfbf" stroke-width="1.3"/><polygon points="12,11 9,19 15,19" fill="#1c2833"/></svg>`
+};
+
+function injectStaticIcons() {
+  document.getElementById("login-emblem").innerHTML = ICONS.emblem;
+  document.getElementById("ico-res-cash").innerHTML = ICONS.cash;
+  document.getElementById("ico-res-goods").innerHTML = ICONS.goods;
+  document.getElementById("ico-res-gold").innerHTML = ICONS.gold;
+  document.getElementById("ico-btn-attack").innerHTML = ICONS.attack;
+  document.getElementById("ico-btn-collect").innerHTML = ICONS.collect;
+  document.getElementById("ico-btn-upgrade").innerHTML = ICONS.upgrade;
+  document.getElementById("ico-btn-sicarios").innerHTML = ICONS.sicarios;
+  document.getElementById("ico-btn-build").innerHTML = ICONS.build;
+  document.getElementById("btn-audio-toggle").innerHTML = ICONS.soundOn;
+  document.getElementById("title-modal-build").innerHTML = `${ICONS.build} Nueva Construcción`;
+  document.getElementById("title-modal-upgrade").innerHTML = `${ICONS.upgrade} Mejorar / Reconstruir`;
+  document.getElementById("title-modal-sicarios").innerHTML = `${ICONS.sicarios} Reclutar Sicarios`;
+  document.getElementById("title-modal-rivals").innerHTML = `${ICONS.attack} Campamentos Rivales`;
+  document.getElementById("title-modal-ranks").innerHTML = `${ICONS.rank} Jerarquía del Cártel`;
+}
+injectStaticIcons();
+
+// ================= MOTOR DE AUDIO SINTETIZADO (WEB AUDIO API) =================
+const SoundFX = {
+  ctx: null,
+  muted: false,
+  bgmInterval: null,
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === "suspended") {
+      this.ctx.resume().catch(() => {});
+    }
+  },
+  play(type) {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    if (type === "click") {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.055);
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now); osc.stop(now + 0.06);
+    } else if (type === "cash") {
+      [880, 1175, 1568].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+        gain.gain.setValueAtTime(0.15, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.18);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.06); osc.stop(now + idx * 0.06 + 0.19);
+      });
+    } else if (type === "build") {
+      [140, 110].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        osc.frequency.exponentialRampToValueAtTime(55, now + idx * 0.12 + 0.09);
+        gain.gain.setValueAtTime(0.16, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.1);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.12); osc.stop(now + idx * 0.12 + 0.1);
+      });
+    } else if (type === "levelup") {
+      [440, 554, 659, 880].forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now + i * 0.09);
+        gain.gain.setValueAtTime(0.18, now + i * 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.3);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now + i * 0.09); osc.stop(now + i * 0.09 + 0.31);
+      });
+    } else if (type === "pistol" || type === "rifle") {
+      const bufferSize = this.ctx.sampleRate * 0.08;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.28));
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = type === "pistol" ? 1300 : 950;
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.16, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+      noise.start(now);
+    } else if (type === "explosion") {
+      const bufferSize = this.ctx.sampleRate * 0.35;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.32));
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(320, now);
+      filter.frequency.exponentialRampToValueAtTime(60, now + 0.34);
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+      noise.start(now);
+    } else if (type === "siren") {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(620, now);
+      osc.frequency.linearRampToValueAtTime(920, now + 0.25);
+      osc.frequency.linearRampToValueAtTime(620, now + 0.5);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now); osc.stop(now + 0.53);
+    }
+  },
+  startAmbient() {
+    if (this.bgmInterval) return;
+    let step = 0;
+    const bassNotes = [73.42, 73.42, 87.31, 65.41];
+    this.bgmInterval = setInterval(() => {
+      if (this.muted || !this.ctx || this.ctx.state !== "running") return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(bassNotes[step % bassNotes.length], now);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now); osc.stop(now + 0.46);
+      step++;
+    }, 650);
+  }
+};
+
+function toggleAudioMute() {
+  SoundFX.muted = !SoundFX.muted;
+  document.getElementById("btn-audio-toggle").innerHTML = SoundFX.muted ? ICONS.soundOff : ICONS.soundOn;
+  if (!SoundFX.muted) SoundFX.play("click");
+}
+
+window.addEventListener("touchstart", () => { SoundFX.init(); SoundFX.startAmbient(); }, { once: true });
+window.addEventListener("mousedown", () => { SoundFX.init(); SoundFX.startAmbient(); }, { once: true });
+
+// ================= CONFIGURACIÓN DE ADMINISTRADOR (100% OCULTA) =================
+const ADMIN_CONFIG = {
+  secretKey: "PATRON2026",
+  isAdminMode: false,
+  xpMultiplier: 1.0,
+  economyMultiplier: 1.0,
+  firebaseDbUrl: ""
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("admin") === ADMIN_CONFIG.secretKey) {
+  ADMIN_CONFIG.isAdminMode = true;
+}
+
+const RANKS = [
+  "Mandadero (Nv. 1-10)", "Halcón (Nv. 11-20)", "Pistolero (Nv. 21-30)",
+  "Sicario (Nv. 31-40)", "Teniente (Nv. 41-50)", "Jefe de Plaza (Nv. 51-60)",
+  "Comandante (Nv. 61-70)", "Capo Regional (Nv. 71-80)", "Señor del Cártel (Nv. 81-90)",
+  "El Patrón Supremo (Nv. 91-100)"
+];
+
+let player = {
+  id: "usr_" + Math.floor(1000 + Math.random() * 9000),
+  name: "",
+  level: 1,
+  xp: 0,
+  cash: 650,
+  goods: 180,
+  gold: 25,
+  troops: { pistolero: 2, metralleta: 0, granadero: 0 }
+};
+
+// ================= ESTADÍSTICAS DE EDIFICIOS Y SICARIOS =================
+const BUILDINGS_DB = {
+  finca: {
+    name: "La Hacienda", radius: 4.3, baseHp: 1200, costCash: 0, buildSec: 0, upgCash: 900, repairCash: 350,
+    desc: "Mando central fortificado. Alta resistencia estructural."
+  },
+  boveda: {
+    name: "Búnker Bóveda", radius: 2.6, baseHp: 850, costGoods: 260, buildSec: 30, upgCash: 650, repairCash: 260,
+    prod: "cash", rate: 5.5, desc: "Concreto armado blindado. Genera efectivo y resiste ataques."
+  },
+  torreta: {
+    name: "Torre Vigilancia", radius: 1.8, baseHp: 620, costCash: 600, buildSec: 35, upgCash: 700, repairCash: 240,
+    desc: "Defensa pesada con reflector y ametralladora calibrada."
+  },
+  barracon: {
+    name: "Campamento", radius: 2.8, baseHp: 540, costCash: 520, buildSec: 28, upgCash: 600, repairCash: 210,
+    desc: "Cuartel táctico de operaciones para tus sicarios."
+  },
+  plantacion: {
+    name: "Plantación", radius: 3.1, baseHp: 380, costCash: 450, buildSec: 25, upgCash: 550, repairCash: 180,
+    prod: "goods", rate: 2.2, desc: "Cultivos de hoja. Produce mercancía (estructura ligera)."
+  }
+};
+
+const TROOPS_DB = {
+  pistolero: {
+    name: "Pistolero", minLvl: 1, cost: 220, trainSec: 18,
+    hp: 140, defense: 0.10, dmg: 18, bldgBonus: 1.0, fireRate: 30,
+    range: 6.5, speed: 0.038, shirt: 0xd6d2c4, hat: 0x3e2723,
+    desc: "Ágil y rápido. Defensa ligera (10%)."
+  },
+  metralleta: {
+    name: "Metralleta", minLvl: 3, cost: 480, trainSec: 30,
+    hp: 260, defense: 0.25, dmg: 32, bldgBonus: 1.1, fireRate: 22,
+    range: 7.5, speed: 0.032, shirt: 0x2c3e50, hat: 0x111111,
+    desc: "Chaleco pesado (25% defensa) y ráfagas rápidas."
+  },
+  granadero: {
+    name: "Granadero", minLvl: 6, cost: 850, trainSec: 45,
+    hp: 210, defense: 0.15, dmg: 75, bldgBonus: 1.5, fireRate: 44,
+    range: 8.8, speed: 0.027, shirt: 0x4b5320, hat: 0x2e3314,
+    desc: "Explosivos (+50% daño a edificios). Defensa media (15%)."
+  }
+};
+
+let myBuildings = [
+  { id: 1, type: "finca", x: 0, z: -5, lvl: 1, stored: 0, burning: false, destroyed: false, hp: 1200 },
+  { id: 2, type: "plantacion", x: -11, z: 2, lvl: 1, stored: 12, burning: false, destroyed: false, hp: 380 },
+  { id: 3, type: "boveda", x: 11, z: 1, lvl: 1, stored: 25, burning: false, destroyed: false, hp: 850 },
+  { id: 4, type: "torreta", x: -6, z: 10, lvl: 1, stored: 0, burning: false, destroyed: false, hp: 620 },
+  { id: 5, type: "barracon", x: 7, z: 9, lvl: 1, stored: 0, burning: false, destroyed: false, hp: 540 }
+];
+let activeTimers = [];
+
+let onlinePlayersDirectory = [
+  {
+    id: "p_101", name: "Don_Rafa_GDL", level: 2, lootCash: 540, lootGoods: 240, pendingEvent: null,
+    layout: [
+      { type: "finca", x: 0, z: -6, hp: 1200 },
+      { type: "boveda", x: -8, z: -2, hp: 850 },
+      { type: "plantacion", x: 8, z: -2, hp: 380 },
+      { type: "torreta", x: 0, z: 3, hp: 620 }
+    ]
+  },
+  {
+    id: "p_102", name: "Sombra_Sinaloa", level: 5, lootCash: 920, lootGoods: 430, pendingEvent: null,
+    layout: [
+      { type: "finca", x: 0, z: -7, hp: 1450 },
+      { type: "boveda", x: -9, z: -3, hp: 980 },
+      { type: "plantacion", x: 9, z: -3, hp: 440 },
+      { type: "torreta", x: -5, z: 4, hp: 720 },
+      { type: "torreta", x: 5, z: 4, hp: 720 }
+    ]
+  },
+  {
+    id: "p_103", name: "Comandante_Cero", level: 11, lootCash: 1650, lootGoods: 780, pendingEvent: null,
+    layout: [
+      { type: "finca", x: 0, z: -8, hp: 1800 },
+      { type: "boveda", x: -10, z: -4, hp: 1150 },
+      { type: "boveda", x: 10, z: -4, hp: 1150 },
+      { type: "torreta", x: -6, z: 3, hp: 850 },
+      { type: "torreta", x: 6, z: 3, hp: 850 },
+      { type: "barracon", x: 0, z: 1, hp: 680 }
+    ]
+  }
+];
+
+function getBuildingMaxHp(b) {
+  const base = BUILDINGS_DB[b.type] ? BUILDINGS_DB[b.type].baseHp : 500;
+  return Math.floor(base * (1 + ((b.lvl || 1) - 1) * 0.25));
+}
+
+function getBuildingRepairCost(b) {
+  const base = BUILDINGS_DB[b.type] ? BUILDINGS_DB[b.type].repairCash : 200;
+  return Math.floor(base * Math.pow(1.4, (b.lvl || 1) - 1));
+}
+
+// ================= PERSISTENCIA DE PARTIDA (GUARDADO AUTOMÁTICO) =================
+const SAVE_KEY = "cw3d_save_state_v3";
+
+function saveGameProgress() {
+  if (!player.name) return;
+  const state = {
+    player,
+    myBuildings: myBuildings.map(b => ({
+      id: b.id, type: b.type, x: b.x, z: b.z, lvl: b.lvl,
+      stored: b.stored, burning: !!b.burning, destroyed: !!b.destroyed,
+      hp: b.hp || getBuildingMaxHp(b)
+    })),
+    activeTimers: activeTimers.map(t => ({
+      id: t.id, label: t.label, endTime: t.endTime,
+      actionType: t.actionType, payload: t.payload
+    })),
+    lastSaved: Date.now()
+  };
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (e) { console.warn("Error guardando progreso local", e); }
+
+  if (ADMIN_CONFIG.firebaseDbUrl) {
+    const syncData = {
+      id: player.id, name: player.name, level: player.level,
+      lootCash: Math.max(300, Math.floor(player.cash * 0.4)),
+      lootGoods: Math.max(120, Math.floor(player.goods * 0.4)),
+      pendingEvent: null,
+      layout: myBuildings.filter(b => !b.destroyed).map(b => ({
+        type: b.type, x: b.x, z: b.z, hp: getBuildingMaxHp(b)
+      }))
+    };
+    fetch(`${ADMIN_CONFIG.firebaseDbUrl}/players/${player.id}.json`, {
+      method: "PUT", body: JSON.stringify(syncData)
+    }).catch(() => {});
+  }
+}
+
+function hydrateTimerCallback(t) {
+  if (t.actionType === "build") {
+    return () => {
+      const spec = BUILDINGS_DB[t.payload.type];
+      myBuildings.push({
+        id: Date.now(), type: t.payload.type, x: t.payload.x, z: t.payload.z,
+        lvl: 1, stored: 0, burning: false, destroyed: false, hp: spec.baseHp
+      });
+      addXP(160); rebuildBase3D(); updateHUD(); saveGameProgress();
+      SoundFX.play("build");
+      showToast(`¡${spec.name} construida!`);
+    };
+  } else if (t.actionType === "upgrade") {
+    return () => {
+      const b = myBuildings.find(item => item.id === t.payload.bId);
+      if (b) {
+        b.lvl++;
+        b.destroyed = false;
+        b.burning = false;
+        b.hp = getBuildingMaxHp(b);
+        addXP(240 * b.lvl); rebuildBase3D(); updateHUD(); saveGameProgress();
+        SoundFX.play("build");
+        showToast(`¡${BUILDINGS_DB[b.type].name} subió a Nivel ${b.lvl}!`);
+      }
+    };
+  } else if (t.actionType === "train") {
+    return () => {
+      const spec = TROOPS_DB[t.payload.tKey];
+      player.troops[t.payload.tKey]++;
+      addXP(65); rebuildBase3D(); updateHUD(); saveGameProgress();
+      SoundFX.play("click");
+      showToast(`¡${spec.name} listo para el combate!`);
+    };
+  }
+  return () => {};
+}
+
+function loadSavedGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.player || !saved.player.name) return false;
+
+    player = { ...player, ...saved.player };
+    if (Array.isArray(saved.myBuildings) && saved.myBuildings.length > 0) {
+      myBuildings = saved.myBuildings.map(b => ({
+        ...b,
+        destroyed: !!b.destroyed,
+        burning: !!b.burning,
+        hp: b.destroyed ? 0 : (b.hp || getBuildingMaxHp(b))
+      }));
+    }
+
+    if (saved.lastSaved) {
+      const elapsedSec = Math.min(14400, Math.max(0, (Date.now() - saved.lastSaved) / 1000));
+      myBuildings.forEach(b => {
+        if (b.burning || b.destroyed) return;
+        const s = BUILDINGS_DB[b.type];
+        if (s && s.prod) {
+          b.stored += s.rate * (1 + (b.lvl - 1) * 0.35) * 0.25 * elapsedSec;
+        }
+      });
+    }
+
+    activeTimers = [];
+    if (Array.isArray(saved.activeTimers)) {
+      saved.activeTimers.forEach(t => {
+        const cb = hydrateTimerCallback(t);
+        if (Date.now() >= t.endTime) {
+          cb();
+        } else {
+          activeTimers.push({ ...t, onComplete: cb });
+        }
+      });
+    }
+
+    document.getElementById("login-screen").style.display = "none";
+    rebuildBase3D();
+    updateHUD();
+    showToast(`Bienvenido de vuelta, ${player.name}`);
+    return true;
+  } catch (e) {
+    console.warn("No se pudo cargar partida previa", e);
+    return false;
+  }
+}
+
+// ================= REGISTRO / VALIDACIÓN DE NOMBRE ÚNICO =================
+function getSavedUsersRegistry() {
+  try { return JSON.parse(localStorage.getItem("cw3d_users_registry") || "[]"); }
+  catch { return []; }
+}
+
+async function registerOrLoginPlayer() {
+  SoundFX.init(); SoundFX.play("click");
+  const rawName = document.getElementById("username-input").value.trim();
+  const errBox = document.getElementById("login-error");
+
+  if (rawName.length < 3) {
+    errBox.textContent = "El nombre debe tener al menos 3 caracteres.";
+    return;
+  }
+  if (!/^[a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ-]+$/.test(rawName)) {
+    errBox.textContent = "Usa solo letras, números o guiones.";
+    return;
+  }
+
+  const normalized = rawName.toLowerCase();
+  const localRegistry = getSavedUsersRegistry();
+  const takenInDirectory = onlinePlayersDirectory.some(u => u.name.toLowerCase() === normalized);
+  const takenLocally = localRegistry.some(u => u.name.toLowerCase() === normalized);
+
+  let takenInFirebase = false;
+  if (ADMIN_CONFIG.firebaseDbUrl) {
+    try {
+      const res = await fetch(`${ADMIN_CONFIG.firebaseDbUrl}/players.json`);
+      const data = await res.json();
+      if (data) {
+        onlinePlayersDirectory = Object.values(data);
+        takenInFirebase = onlinePlayersDirectory.some(u => u.name.toLowerCase() === normalized);
+      }
+    } catch (e) { console.warn("Sincronizando en modo local"); }
+  }
+
+  if (takenInDirectory || takenLocally || takenInFirebase) {
+    errBox.textContent = `El nombre "${rawName}" ya está en uso. Elige otro.`;
+    return;
+  }
+
+  player.name = rawName;
+  localRegistry.push({ id: player.id, name: player.name });
+  localStorage.setItem("cw3d_users_registry", JSON.stringify(localRegistry));
+
+  onlinePlayersDirectory.push({
+    id: player.id, name: player.name, level: player.level,
+    lootCash: player.cash, lootGoods: player.goods, pendingEvent: null,
+    layout: myBuildings.map(b => ({ type: b.type, x: b.x, z: b.z, hp: BUILDINGS_DB[b.type].baseHp }))
+  });
+
+  saveGameProgress();
+  document.getElementById("login-screen").style.display = "none";
+  updateHUD();
+  SoundFX.play("levelup");
+  showToast(`Hacienda fundada por ${player.name}`);
+}
+
+// ================= PROGRESIÓN Y ECONOMÍA =================
+function xpForNextLevel(lvl) { return Math.floor(600 * Math.pow(lvl, 1.65)); }
+function getMaxTroops() { return 3 + player.level; }
+function getCurrentRankName() {
+  const idx = Math.min(9, Math.floor((player.level - 1) / 10));
+  return `Rango ${idx + 1}: ${RANKS[idx].split(" ")[0]}`;
+}
+function addXP(baseAmount) {
+  player.xp += Math.floor(baseAmount * ADMIN_CONFIG.xpMultiplier);
+  let req = xpForNextLevel(player.level);
+  let leveled = false;
+  while (player.xp >= req && player.level < 100) {
+    player.xp -= req; player.level++; req = xpForNextLevel(player.level);
+    leveled = true;
+    showToast(`¡SUBISTE A NIVEL ${player.level}! (${getCurrentRankName()})`);
+  }
+  if (leveled) SoundFX.play("levelup");
+  updateHUD();
+  saveGameProgress();
+}
+
+// ================= TEXTURAS HD CON RELIEVE =================
+function createHDTextureSet(type) {
+  const size = 1024;
+  const colorCanvas = document.createElement("canvas");
+  const bumpCanvas = document.createElement("canvas");
+  colorCanvas.width = bumpCanvas.width = size;
+  colorCanvas.height = bumpCanvas.height = size;
+  const ctx = colorCanvas.getContext("2d");
+  const btx = bumpCanvas.getContext("2d");
+
+  if (type === "terrain") {
+    ctx.fillStyle = "#243f1b"; ctx.fillRect(0, 0, size, size);
+    btx.fillStyle = "#808080"; btx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 55000; i++) {
+      const x = Math.random() * size, y = Math.random() * size, r = 1 + Math.random() * 4;
+      const shades = ["#1a3013", "#2e4e22", "#3b5e29", "#4b3d26", "#152610"];
+      ctx.fillStyle = shades[Math.floor(Math.random() * shades.length)];
+      ctx.globalAlpha = 0.42; ctx.fillRect(x, y, r, r);
+      btx.fillStyle = Math.random() > 0.5 ? "#acacac" : "#545454";
+      btx.globalAlpha = 0.34; btx.fillRect(x, y, r, r);
+    }
+    ctx.globalAlpha = 0.38; ctx.strokeStyle = "#5c442c"; ctx.lineWidth = 48; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(512, 1024); ctx.quadraticCurveTo(475, 640, 512, 420); ctx.stroke();
+  } else if (type === "stucco") {
+    ctx.fillStyle = "#e6d4b5"; ctx.fillRect(0, 0, size, size);
+    btx.fillStyle = "#808080"; btx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 28000; i++) {
+      const x = Math.random() * size, y = Math.random() * size;
+      ctx.fillStyle = Math.random() > 0.5 ? "#cdb896" : "#f5ebd8";
+      ctx.globalAlpha = 0.32; ctx.fillRect(x, y, 4, 4);
+      btx.fillStyle = Math.random() > 0.5 ? "#b8b8b8" : "#484848";
+      btx.globalAlpha = 0.38; btx.fillRect(x, y, 4, 4);
+    }
+  } else if (type === "roof") {
+    ctx.fillStyle = "#8f2f1b"; ctx.fillRect(0, 0, size, size);
+    btx.fillStyle = "#383838"; btx.fillRect(0, 0, size, size);
+    for (let y = 0; y < size; y += 36) {
+      for (let x = 0; x < size; x += 48) {
+        const grad = ctx.createLinearGradient(x, y, x + 48, y);
+        grad.addColorStop(0, "#631c0d"); grad.addColorStop(0.5, "#b54228"); grad.addColorStop(1, "#541609");
+        ctx.fillStyle = grad; ctx.fillRect(x, y, 46, 34);
+        btx.fillStyle = "#e0e0e0"; btx.fillRect(x + 4, y + 2, 38, 30);
+      }
+    }
+  } else if (type === "soil") {
+    ctx.fillStyle = "#301d11"; ctx.fillRect(0, 0, size, size);
+    btx.fillStyle = "#404040"; btx.fillRect(0, 0, size, size);
+    for (let y = 16; y < size; y += 56) {
+      ctx.fillStyle = "#1f1008"; ctx.fillRect(0, y, size, 22);
+      ctx.fillStyle = "#472c1b"; ctx.fillRect(0, y + 22, size, 24);
+      btx.fillStyle = "#151515"; btx.fillRect(0, y, size, 22);
+      btx.fillStyle = "#e6e6e6"; btx.fillRect(0, y + 22, size, 24);
+    }
+  } else if (type === "concrete") {
+    ctx.fillStyle = "#5c6163"; ctx.fillRect(0, 0, size, size);
+    btx.fillStyle = "#808080"; btx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 24000; i++) {
+      const x = Math.random() * size, y = Math.random() * size;
+      ctx.fillStyle = Math.random() > 0.5 ? "#484c4e" : "#757a7d";
+      ctx.globalAlpha = 0.3; ctx.fillRect(x, y, 3, 3);
+      btx.fillStyle = Math.random() > 0.5 ? "#a2a2a2" : "#5e5e5e";
+      btx.globalAlpha = 0.34; btx.fillRect(x, y, 3, 3);
+    }
+    ctx.globalAlpha = 0.65; ctx.strokeStyle = "#26292a"; ctx.lineWidth = 5;
+    btx.globalAlpha = 0.92; btx.strokeStyle = "#111111"; btx.lineWidth = 6;
+    for (let g = 0; g < size; g += 256) { ctx.strokeRect(g, 0, 256, size); btx.strokeRect(g, 0, 256, size); }
+  }
+
+  const map = new THREE.CanvasTexture(colorCanvas);
+  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  map.wrapS = map.wrapT = bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+  return { map, bumpMap };
+}
+
+const matTerrainSet = createHDTextureSet("terrain");
+matTerrainSet.map.repeat.set(9, 9); matTerrainSet.bumpMap.repeat.set(9, 9);
+const matStuccoSet = createHDTextureSet("stucco");
+const matRoofSet = createHDTextureSet("roof");
+matRoofSet.map.repeat.set(3, 3); matRoofSet.bumpMap.repeat.set(3, 3);
+const matSoilSet = createHDTextureSet("soil");
+const matConcreteSet = createHDTextureSet("concrete");
+
+// ================= ESCENA 3D E ILUMINACIÓN CINEMATOGRÁFICA =================
+const container = document.getElementById("canvas-container");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x5c7f6a);
+scene.fog = new THREE.FogExp2(0x415e48, 0.0075);
+
+const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.5, 320);
+let camTarget = new THREE.Vector3(0, 0, 1);
+let camDist = 38;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+container.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xe6f7ff, 0x2a3f20, 0.7));
+const sunLight = new THREE.DirectionalLight(0xfff0d4, 1.42);
+sunLight.position.set(34, 54, 28);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048;
+const d = 44;
+sunLight.shadow.camera.left = -d; sunLight.shadow.camera.right = d;
+sunLight.shadow.camera.top = d; sunLight.shadow.camera.bottom = -d;
+scene.add(sunLight);
+
+const groundGeo = new THREE.PlaneGeometry(260, 260, 64, 64);
+const posAttr = groundGeo.attributes.position;
+for (let i = 0; i < posAttr.count; i++) {
+  const vx = posAttr.getX(i), vy = posAttr.getY(i);
+  const dist = Math.hypot(vx, vy);
+  if (dist > 34) posAttr.setZ(i, Math.max(0, Math.sin(vx * 0.08) * Math.cos(vy * 0.08) * ((dist - 34) * 0.16)));
+}
+groundGeo.computeVertexNormals();
+const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({
+  map: matTerrainSet.map, bumpMap: matTerrainSet.bumpMap, bumpScale: 0.22, roughness: 0.88
+}));
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+function populateJungle() {
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x473222, roughness: 0.9 });
+  const palmMat = new THREE.MeshStandardMaterial({ color: 0x245420, roughness: 0.72, side: THREE.DoubleSide });
+  const bushMat = new THREE.MeshStandardMaterial({ color: 0x1c421a, roughness: 0.85 });
+  for (let i = 0; i < 160; i++) {
+    const ang = Math.random() * Math.PI * 2, dist = 33 + Math.random() * 72;
+    const x = Math.cos(ang) * dist, z = Math.sin(ang) * dist;
+    if (i % 2 === 0) {
+      const palm = new THREE.Group();
+      const h = 5.5 + Math.random() * 3.2;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.35, h, 8), trunkMat);
+      trunk.position.y = h / 2; trunk.castShadow = true; palm.add(trunk);
+      for (let f = 0; f < 6; f++) {
+        const frond = new THREE.Mesh(new THREE.ConeGeometry(0.68, 3.3, 4), palmMat);
+        frond.position.y = h; frond.rotation.z = Math.PI / 2.6; frond.rotation.y = (f / 6) * Math.PI * 2;
+        frond.castShadow = true; palm.add(frond);
+      }
+      palm.position.set(x, 0, z); scene.add(palm);
+    } else {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.56, 4.3, 8), trunkMat);
+      trunk.position.y = 2.15; trunk.castShadow = true; tree.add(trunk);
+      for (let c = 0; c < 4; c++) {
+        const canopy = new THREE.Mesh(new THREE.DodecahedronGeometry(1.75 + Math.random() * 0.7, 1), bushMat);
+        canopy.position.set((Math.random() - 0.5) * 1.4, 4.4 + Math.random() * 1.1, (Math.random() - 0.5) * 1.4);
+        canopy.castShadow = true; tree.add(canopy);
+      }
+      tree.position.set(x, 0, z); scene.add(tree);
+    }
+  }
+}
+populateJungle();
+
+const worldGroup = new THREE.Group();
+scene.add(worldGroup);
+
+// ================= BARRAS DE VIDA 3D FLOTANTES (SPRITES HD) =================
+function createHealthBarSprite(widthWorld = 3.2, heightWorld = 0.42) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 36;
+  const ctx = canvas.getContext("2d");
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(widthWorld, heightWorld, 1);
+  sprite.userData = { canvas, ctx, tex, lastPct: -1, lastSelected: false };
+  updateHealthBarSprite(sprite, 1, 1, false);
+  return sprite;
+}
+
+function updateHealthBarSprite(sprite, hp, maxHp, isSelected = false) {
+  if (!sprite || !sprite.userData) return;
+  const pct = Math.max(0, Math.min(1, hp / (maxHp || 1)));
+  if (Math.abs(sprite.userData.lastPct - pct) < 0.005 && sprite.userData.lastSelected === isSelected) return;
+  sprite.userData.lastPct = pct;
+  sprite.userData.lastSelected = isSelected;
+
+  const { canvas, ctx, tex } = sprite.userData;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "rgba(12, 10, 8, 0.88)";
+  ctx.fillRect(4, 4, canvas.width - 8, canvas.height - 8);
+
+  ctx.strokeStyle = isSelected ? "#ff3b30" : "#d4af37";
+  ctx.lineWidth = isSelected ? 5 : 3;
+  ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+
+  let barColor = "#2ecc71";
+  if (pct < 0.35) barColor = "#e74c3c";
+  else if (pct < 0.65) barColor = "#f1c40f";
+
+  ctx.fillStyle = barColor;
+  ctx.fillRect(9, 9, (canvas.width - 18) * pct, canvas.height - 18);
+
+  tex.needsUpdate = true;
+}
+
+// ================= CONSTRUCCIÓN DE EDIFICIOS 3D Y RUINAS =================
+function createRuinsMesh3D(b) {
+  const group = new THREE.Group();
+  group.position.set(b.x, 0, b.z);
+  const rad = BUILDINGS_DB[b.type].radius;
+
+  const scorchMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.96 });
+  const rubbleMat = new THREE.MeshStandardMaterial({ color: 0x44403c, bumpMap: matConcreteSet.bumpMap, bumpScale: 0.2, roughness: 0.92 });
+  const beamMat = new THREE.MeshStandardMaterial({ color: 0x291d14, roughness: 0.9 });
+
+  // Base carbonizada
+  const crater = new THREE.Mesh(new THREE.CylinderGeometry(rad * 0.88, rad * 0.98, 0.22, 16), scorchMat);
+  crater.position.y = 0.11;
+  crater.receiveShadow = true;
+  group.add(crater);
+
+  // Bloques de concreto derrumbados
+  for (let i = 0; i < 11; i++) {
+    const ang = (i / 11) * Math.PI * 2 + 0.3;
+    const dist = rad * (0.25 + (i % 3) * 0.22);
+    const block = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.45 + (i % 4) * 0.16, 0),
+      rubbleMat
+    );
+    block.position.set(Math.cos(ang) * dist, 0.38, Math.sin(ang) * dist);
+    block.rotation.set(i * 0.5, i * 0.8, i * 0.3);
+    block.castShadow = true;
+    group.add(block);
+  }
+
+  // Vigas quemadas inclinadas
+  for (let v = 0; v < 3; v++) {
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.1, 0.22), beamMat);
+    beam.position.set((v - 1) * 0.85, 0.8, (v % 2 === 0 ? 0.5 : -0.5));
+    beam.rotation.set(0.45 * (v - 1), 0.3, 0.55 - v * 0.4);
+    beam.castShadow = true;
+    group.add(beam);
+  }
+
+  // Anillo rojo de alerta en el suelo
+  const alertRing = new THREE.Mesh(
+    new THREE.RingGeometry(rad * 0.86, rad * 1.0, 28),
+    new THREE.MeshBasicMaterial({ color: 0xe74c3c, side: THREE.DoubleSide, transparent: true, opacity: 0.72 })
+  );
+  alertRing.rotation.x = -Math.PI / 2;
+  alertRing.position.y = 0.06;
+  group.add(alertRing);
+
+  return group;
+}
+
+function createBuildingMesh3D(b, showHpBar = false) {
+  if (b.destroyed) return createRuinsMesh3D(b);
+
+  const group = new THREE.Group();
+  group.position.set(b.x, 0, b.z);
+
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x452b15, roughness: 0.8 });
+  const stuccoMat = new THREE.MeshStandardMaterial({ map: matStuccoSet.map, bumpMap: matStuccoSet.bumpMap, bumpScale: 0.1, roughness: 0.82 });
+  const roofMat = new THREE.MeshStandardMaterial({ map: matRoofSet.map, bumpMap: matRoofSet.bumpMap, bumpScale: 0.14, roughness: 0.7 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x26292c, metalness: 0.85, roughness: 0.28 });
+  const glassLitMat = new THREE.MeshStandardMaterial({ color: 0xffe082, emissive: 0xd49b2a, emissiveIntensity: 0.55 });
+
+  let topHeight = 4.2;
+
+  if (b.type === "finca") {
+    topHeight = 7.4;
+    const basePlinth = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.35, 5.4), new THREE.MeshStandardMaterial({ map: matConcreteSet.map, bumpMap: matConcreteSet.bumpMap, bumpScale: 0.08 }));
+    basePlinth.position.y = 0.17; basePlinth.receiveShadow = true;
+    const floor1 = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.5, 4.8), stuccoMat);
+    floor1.position.y = 1.5; floor1.castShadow = true; floor1.receiveShadow = true;
+    const trimBand = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.22, 5.0), woodMat);
+    trimBand.position.y = 2.78;
+    const floor2 = new THREE.Mesh(new THREE.BoxGeometry(5.6, 2.2, 4.0), stuccoMat);
+    floor2.position.set(0, 3.9, -0.2); floor2.castShadow = true;
+    const mainRoof = new THREE.Mesh(new THREE.ConeGeometry(4.8, 1.9, 4), roofMat);
+    mainRoof.position.set(0, 5.95, -0.2); mainRoof.rotation.y = Math.PI / 4; mainRoof.castShadow = true;
+    const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(7.3, 0.25, 1.6), roofMat);
+    porchRoof.position.set(0, 2.8, 2.85); porchRoof.rotation.x = 0.18; porchRoof.castShadow = true;
+
+    [-3.1, -1.1, 1.1, 3.1].forEach(cx => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 2.5, 10), woodMat);
+      col.position.set(cx, 1.5, 3.4); col.castShadow = true; group.add(col);
+    });
+    [-2.0, 2.0].forEach(wx => {
+      const win1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.15, 0.16), glassLitMat);
+      win1.position.set(wx, 1.65, 2.41);
+      const win2 = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.05, 0.16), glassLitMat);
+      win2.position.set(wx * 0.85, 3.9, 1.81);
+      group.add(win1, win2);
+    });
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.15, 1.85, 0.2), woodMat);
+    door.position.set(0, 1.15, 2.41);
+    group.add(basePlinth, floor1, trimBand, floor2, mainRoof, porchRoof, door);
+  } else if (b.type === "plantacion") {
+    topHeight = 2.6;
+    const soilBed = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.3, 4.4), new THREE.MeshStandardMaterial({ map: matSoilSet.map, bumpMap: matSoilSet.bumpMap, bumpScale: 0.18, roughness: 0.95 }));
+    soilBed.position.y = 0.15; soilBed.receiveShadow = true; group.add(soilBed);
+    [[-2.6, -2.2], [0, -2.2], [2.6, -2.2], [-2.6, 2.2], [2.6, 2.2], [-2.6, 0], [2.6, 0]].forEach(([px, pz]) => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.15, 6), woodMat);
+      post.position.set(px, 0.58, pz); post.castShadow = true; group.add(post);
+    });
+    const leafMat = new THREE.MeshStandardMaterial({ color: b.burning ? 0x6e3b14 : 0x26732a, roughness: 0.7, side: THREE.DoubleSide });
+    for (let ix = -1.8; ix <= 1.8; ix += 1.2) {
+      for (let iz = -1.4; iz <= 1.4; iz += 1.4) {
+        const plant = new THREE.Group();
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.95, 5), woodMat);
+        stem.position.y = 0.48; plant.add(stem);
+        for (let l = 0; l < 4; l++) {
+          const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.78, 4), leafMat);
+          leaf.position.y = 0.68 + (l % 2) * 0.2; leaf.rotation.z = 0.85; leaf.rotation.y = (l * Math.PI) / 2 + ix;
+          leaf.castShadow = true; plant.add(leaf);
+        }
+        plant.position.set(ix, 0.2, iz); group.add(plant);
+      }
+    }
+    if (b.burning) {
+      const fire = new THREE.Mesh(new THREE.ConeGeometry(1.9, 2.8, 8), new THREE.MeshBasicMaterial({ color: 0xff5722, transparent: true, opacity: 0.85 }));
+      fire.position.y = 1.5; group.add(fire);
+    }
+  } else if (b.type === "boveda") {
+    topHeight = 4.0;
+    const concreteMat = new THREE.MeshStandardMaterial({ map: matConcreteSet.map, bumpMap: matConcreteSet.bumpMap, bumpScale: 0.16, roughness: 0.8 });
+    const bunker = new THREE.Mesh(new THREE.BoxGeometry(4.1, 2.7, 3.7), concreteMat);
+    bunker.position.y = 1.35; bunker.castShadow = true; bunker.receiveShadow = true;
+    const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.38, 4.0), metalMat);
+    roofSlab.position.y = 2.85; roofSlab.castShadow = true;
+    const vaultDoor = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.28, 20), metalMat);
+    vaultDoor.rotation.x = Math.PI / 2; vaultDoor.position.set(0, 1.3, 1.88);
+    const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 8, 16), new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2 }));
+    wheel.position.set(0, 1.3, 2.04);
+    group.add(bunker, roofSlab, vaultDoor, wheel);
+  } else if (b.type === "torreta") {
+    topHeight = 5.6;
+    [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.15, 3.7, 6), woodMat);
+      leg.position.set(lx, 1.85, lz); leg.castShadow = true; group.add(leg);
+    });
+    const platform = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.28, 2.4), woodMat);
+    platform.position.y = 3.6; platform.castShadow = true;
+    const parapet = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.75, 2.4), new THREE.MeshStandardMaterial({ map: matConcreteSet.map, bumpMap: matConcreteSet.bumpMap, bumpScale: 0.12 }));
+    parapet.position.y = 4.05;
+    const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.34, 1.45), metalMat);
+    gunBody.position.set(0, 4.55, 0.5);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 1.15, 8), metalMat);
+    barrel.rotation.x = Math.PI / 2; barrel.position.set(0, 4.55, 1.45);
+    group.add(platform, parapet, gunBody, barrel);
+  } else if (b.type === "barracon") {
+    topHeight = 4.2;
+    const canvasMat = new THREE.MeshStandardMaterial({ color: 0x455231, bumpMap: matStuccoSet.bumpMap, bumpScale: 0.06, roughness: 0.88 });
+    const tentBody = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 2.35, 2.15, 6), canvasMat);
+    tentBody.position.y = 1.08; tentBody.castShadow = true;
+    const tentRoof = new THREE.Mesh(new THREE.ConeGeometry(2.4, 1.25, 6), new THREE.MeshStandardMaterial({ color: 0x354025 }));
+    tentRoof.position.y = 2.75; tentRoof.castShadow = true;
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.68, 0.75), woodMat);
+    crate.position.set(2.15, 0.34, 1.2); crate.castShadow = true;
+    group.add(tentBody, tentRoof, crate);
+  }
+
+  const targetRing = new THREE.Mesh(
+    new THREE.RingGeometry(BUILDINGS_DB[b.type].radius * 0.92, BUILDINGS_DB[b.type].radius * 1.12, 36),
+    new THREE.MeshBasicMaterial({ color: 0xff2d20, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+  );
+  targetRing.rotation.x = -Math.PI / 2;
+  targetRing.position.y = 0.09;
+  targetRing.visible = false;
+  group.add(targetRing);
+  group.userData.targetRing = targetRing;
+
+  if (showHpBar) {
+    const hpSprite = createHealthBarSprite(3.6, 0.46);
+    hpSprite.position.set(0, topHeight, 0);
+    group.add(hpSprite);
+    group.userData.hpSprite = hpSprite;
+  }
+
+  return group;
+}
+
+// ================= SICARIOS 3D CON ARMAS DIFERENCIADAS Y BARRA DE VIDA =================
+function createRealisticSicario3D(shirtColor, hatColor, weaponType = "pistolero", markerColor = null, showHpBar = false) {
+  const root = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8a273, roughness: 0.7 });
+  const shirtMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.85 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x22262b, roughness: 0.9 });
+  const gunMat = new THREE.MeshStandardMaterial({ color: 0x181a1c, metalness: 0.85, roughness: 0.25 });
+
+  const leftLeg = new THREE.Group(); leftLeg.position.set(-0.16, 0.85, 0);
+  const lThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.85, 8), pantsMat);
+  lThigh.position.y = -0.42; lThigh.castShadow = true; leftLeg.add(lThigh);
+
+  const rightLeg = new THREE.Group(); rightLeg.position.set(0.16, 0.85, 0);
+  const rThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.85, 8), pantsMat);
+  rThigh.position.y = -0.42; rThigh.castShadow = true; rightLeg.add(rThigh);
+
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.78, 0.3), shirtMat);
+  torso.position.y = 1.24; torso.castShadow = true;
+
+  const vestThick = weaponType === "metralleta" ? 0.39 : 0.34;
+  const vest = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.58, vestThick), new THREE.MeshStandardMaterial({ color: 0x161915, roughness: 0.75 }));
+  vest.position.y = 1.28;
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 12), skinMat);
+  head.position.y = 1.84; head.castShadow = true;
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 14), new THREE.MeshStandardMaterial({ color: hatColor }));
+  hatBrim.position.y = 1.98;
+  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.21, 0.16, 12), new THREE.MeshStandardMaterial({ color: hatColor }));
+  hatTop.position.y = 2.06;
+
+  const armsGroup = new THREE.Group(); armsGroup.position.set(0, 1.48, 0.1);
+  const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.62, 8), skinMat);
+  rightArm.rotation.x = Math.PI / 2.2; rightArm.position.set(0.32, -0.05, 0.25);
+  const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.62, 8), skinMat);
+  leftArm.rotation.x = Math.PI / 2.4; leftArm.rotation.z = -0.35; leftArm.position.set(-0.22, -0.08, 0.28);
+
+  if (weaponType === "granadero") {
+    const launcher = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.95, 10), new THREE.MeshStandardMaterial({ color: 0x3b4426, metalness: 0.6 }));
+    launcher.rotation.x = Math.PI / 2; launcher.position.set(0.26, -0.02, 0.62);
+    armsGroup.add(launcher);
+  } else if (weaponType === "metralleta") {
+    const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.16, 0.72), gunMat);
+    receiver.position.set(0.26, -0.06, 0.5);
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.1), gunMat);
+    mag.position.set(0.26, -0.22, 0.55); mag.rotation.x = 0.25;
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 6), gunMat);
+    barrel.rotation.x = Math.PI / 2; barrel.position.set(0.26, -0.03, 0.98);
+    armsGroup.add(receiver, mag, barrel);
+  } else {
+    const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.12, 0.45), gunMat);
+    receiver.position.set(0.26, -0.06, 0.42);
+    armsGroup.add(receiver);
+  }
+  armsGroup.add(rightArm, leftArm);
+
+  if (markerColor !== null) {
+    const marker = new THREE.Mesh(
+      new THREE.RingGeometry(0.38, 0.48, 20),
+      new THREE.MeshBasicMaterial({ color: markerColor, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })
+    );
+    marker.rotation.x = -Math.PI / 2; marker.position.y = 0.04; root.add(marker);
+  }
+
+  let hpSprite = null;
+  if (showHpBar) {
+    hpSprite = createHealthBarSprite(1.55, 0.24);
+    hpSprite.position.set(0, 2.55, 0);
+    root.add(hpSprite);
+  }
+
+  root.add(leftLeg, rightLeg, torso, vest, head, hatBrim, hatTop, armsGroup);
+  root.userData = { leftLeg, rightLeg, hpSprite, walkPhase: Math.random() * Math.PI * 2, steerSign: Math.random() > 0.5 ? 1 : -1 };
+  return root;
+}
+
+function animateCharacterWalk(mesh, isMoving) {
+  if (!mesh || !mesh.userData) return;
+  if (isMoving) {
+    mesh.userData.walkPhase += 0.13;
+    const swing = Math.sin(mesh.userData.walkPhase) * 0.48;
+    mesh.userData.leftLeg.rotation.x = swing;
+    mesh.userData.rightLeg.rotation.x = -swing;
+  } else {
+    mesh.userData.leftLeg.rotation.x = 0;
+    mesh.userData.rightLeg.rotation.x = 0;
+  }
+}
+
+function moveWithObstacleAvoidance(entity, targetX, targetZ, speed, buildingsList) {
+  let dx = targetX - entity.x;
+  let dz = targetZ - entity.z;
+  const dist = Math.hypot(dx, dz);
+  if (dist < 0.05) return;
+
+  let dirX = dx / dist;
+  let dirZ = dz / dist;
+
+  const lookAhead = 1.8;
+  const steerSign = (entity.mesh && entity.mesh.userData && entity.mesh.userData.steerSign) || 1;
+
+  buildingsList.forEach(b => {
+    if ((b.hp !== undefined && b.hp <= 0) || b.destroyed) return;
+    const safeRadius = BUILDINGS_DB[b.type].radius + lookAhead;
+    const bx = entity.x - b.x;
+    const bz = entity.z - b.z;
+    const bDist = Math.hypot(bx, bz);
+
+    if (bDist < safeRadius) {
+      const nx = bDist > 0.001 ? bx / bDist : 1;
+      const nz = bDist > 0.001 ? bz / bDist : 0;
+      const tx = -nz * steerSign;
+      const tz = nx * steerSign;
+      const weight = (safeRadius - bDist) / safeRadius;
+
+      dirX += (tx * 1.45 + nx * 0.95) * weight;
+      dirZ += (tz * 1.45 + nz * 0.95) * weight;
+    }
+  });
+
+  const finalLen = Math.hypot(dirX, dirZ) || 1;
+  dirX /= finalLen;
+  dirZ /= finalLen;
+
+  entity.x += dirX * speed;
+  entity.z += dirZ * speed;
+
+  buildingsList.forEach(b => {
+    if ((b.hp !== undefined && b.hp <= 0) || b.destroyed) return;
+    const minR = BUILDINGS_DB[b.type].radius + 0.65;
+    const odx = entity.x - b.x;
+    const odz = entity.z - b.z;
+    const odist = Math.hypot(odx, odz);
+    if (odist < minR) {
+      const onx = odist > 0.001 ? odx / odist : 1;
+      const onz = odist > 0.001 ? odz / odist : 0;
+      entity.x = b.x + onx * (minR + 0.05);
+      entity.z = b.z + onz * (minR + 0.05);
+    }
+  });
+
+  if (entity.mesh) {
+    entity.mesh.position.set(entity.x, 0, entity.z);
+    entity.mesh.rotation.y = Math.atan2(dirX, dirZ);
+  }
+}
+
+let activeTracers = [];
+function spawnBulletTracer(x1, z1, x2, z2, colorHex = 0xffeaa7) {
+  const pts = [new THREE.Vector3(x1, 1.45, z1), new THREE.Vector3(x2, 1.3, z2)];
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: colorHex }));
+  worldGroup.add(line);
+  activeTracers.push({ line, life: 5 });
+}
+
+// ================= RENDER DE LA BASE Y EVENTOS CON DESTRUCCIÓN =================
+let mode = "BASE";
+let baseDefenders = [];
+let policeRaiders = [];
+let currentEvent = null;
+
+function pickValidWaypoint() {
+  for (let i = 0; i < 15; i++) {
+    const wx = (Math.random() - 0.5) * 30;
+    const wz = (Math.random() - 0.5) * 30;
+    const blocked = myBuildings.some(b => !b.destroyed && Math.hypot(b.x - wx, b.z - wz) < BUILDINGS_DB[b.type].radius + 1.4);
+    if (!blocked) return { x: wx, z: wz };
+  }
+  return { x: 0, z: 14 };
+}
+
+function rebuildBase3D() {
+  while (worldGroup.children.length) worldGroup.remove(worldGroup.children[0]);
+  myBuildings.forEach(b => {
+    const isUnderPoliceAttack = (currentEvent && currentEvent.type === "POLICE" && !b.destroyed);
+    const mesh = createBuildingMesh3D(b, isUnderPoliceAttack);
+    b.mesh = mesh;
+    if (isUnderPoliceAttack && mesh.userData.hpSprite) {
+      updateHealthBarSprite(mesh.userData.hpSprite, b.hp, getBuildingMaxHp(b), false);
+    }
+    worldGroup.add(mesh);
+  });
+
+  baseDefenders = [];
+  Object.keys(player.troops).forEach(k => {
+    const spec = TROOPS_DB[k];
+    for (let i = 0; i < player.troops[k]; i++) {
+      const mesh = createRealisticSicario3D(spec.shirt, spec.hat, k, null, true);
+      if (mesh.userData.hpSprite) mesh.userData.hpSprite.visible = false;
+      const start = pickValidWaypoint();
+      const wp = pickValidWaypoint();
+      mesh.position.set(start.x, 0, start.z);
+      worldGroup.add(mesh);
+      baseDefenders.push({
+        type: k, mesh, x: start.x, z: start.z,
+        tx: wp.x, tz: wp.z,
+        hp: spec.hp, maxHp: spec.hp, defense: spec.defense,
+        speed: spec.speed * 0.65, cd: 0, dmg: spec.dmg, fireRate: spec.fireRate, range: spec.range
+      });
+    }
+  });
+  policeRaiders.forEach(p => { if (p.hp > 0) worldGroup.add(p.mesh); });
+}
+rebuildBase3D();
+
+function destroyBaseBuilding(b) {
+  if (!b || b.destroyed) return;
+  b.destroyed = true;
+  b.burning = false;
+  b.hp = 0;
+  b.stored = 0;
+  SoundFX.play("explosion");
+  rebuildBase3D();
+  updateHUD();
+  saveGameProgress();
+  showToast(`¡${BUILDINGS_DB[b.type].name} fue DESTRUIDA! Repárala en Mejorar`);
+}
+
+function triggerRandomEvent(forcedType = null) {
+  if (mode !== "BASE" || currentEvent) return;
+  const evType = forcedType || (Math.random() < 0.5 ? "FIRE" : "POLICE");
+
+  if (evType === "FIRE") {
+    const farms = myBuildings.filter(b => b.type === "plantacion" && !b.destroyed);
+    if (farms.length === 0) return;
+    const targetFarm = farms[Math.floor(Math.random() * farms.length)];
+    targetFarm.burning = true;
+    currentEvent = { type: "FIRE", buildingId: targetFarm.id, deadline: Date.now() + 28000 };
+    rebuildBase3D();
+    SoundFX.play("siren");
+
+    const banner = document.getElementById("event-banner");
+    document.getElementById("event-banner-txt").innerHTML = `${ICONS.fire} ¡INCENDIO EN PLANTACIÓN! (28s)`;
+    const btn = document.getElementById("event-banner-btn");
+    btn.style.display = "inline-flex"; btn.textContent = "Apagar ($120)";
+    banner.style.display = "flex";
+    showToast("¡ALERTA! Apaga el incendio antes de que se destruya");
+  } else if (evType === "POLICE") {
+    currentEvent = { type: "POLICE" };
+    policeRaiders = [];
+    myBuildings.forEach(b => {
+      if (!b.destroyed) b.hp = getBuildingMaxHp(b);
+    });
+    rebuildBase3D();
+
+    baseDefenders.forEach(d => {
+      d.hp = d.maxHp;
+      if (d.mesh.userData.hpSprite) {
+        d.mesh.userData.hpSprite.visible = true;
+        updateHealthBarSprite(d.mesh.userData.hpSprite, d.hp, d.maxHp);
+      }
+    });
+
+    const copCount = 3 + Math.min(4, Math.floor(player.level / 2));
+    for (let i = 0; i < copCount; i++) {
+      const mesh = createRealisticSicario3D(0x1b365d, 0x0f1f38, "metralleta", 0x3498db, true);
+      const px = -8 + i * 4, pz = 26;
+      const copHp = 135 + player.level * 15;
+      mesh.position.set(px, 0, pz);
+      worldGroup.add(mesh);
+      policeRaiders.push({ mesh, x: px, z: pz, hp: copHp, maxHp: copHp, dmg: 22, range: 6.5, speed: 0.032, cd: 0 });
+    }
+    SoundFX.play("siren");
+    const banner = document.getElementById("event-banner");
+    document.getElementById("event-banner-txt").innerHTML = `${ICONS.police} ¡REDADA POLICIAL! Defiende tus edificios`;
+    document.getElementById("event-banner-btn").style.display = "none";
+    banner.style.display = "flex";
+    showToast("¡LA POLICÍA ESTÁ ASALTANDO Y DEMOLIENDO TU CAMPAMENTO!");
+  }
+}
+
+function resolveActiveEvent() {
+  if (!currentEvent || currentEvent.type !== "FIRE") return;
+  if (player.cash < 120) return showToast("Necesitas $120 para apagar el incendio");
+  player.cash -= 120;
+  const farm = myBuildings.find(b => b.id === currentEvent.buildingId);
+  if (farm) farm.burning = false;
+  currentEvent = null;
+  document.getElementById("event-banner").style.display = "none";
+  rebuildBase3D(); updateHUD(); saveGameProgress();
+  SoundFX.play("build");
+  showToast("¡Incendio sofocado! Plantación a salvo");
+}
+
+setInterval(async () => {
+  if (mode !== "BASE" || currentEvent) return;
+  if (ADMIN_CONFIG.firebaseDbUrl && player.id) {
+    try {
+      const res = await fetch(`${ADMIN_CONFIG.firebaseDbUrl}/players/${player.id}/pendingEvent.json`);
+      const ev = await res.json();
+      if (ev) {
+        await fetch(`${ADMIN_CONFIG.firebaseDbUrl}/players/${player.id}/pendingEvent.json`, { method: "DELETE" });
+        triggerRandomEvent(ev);
+        return;
+      }
+    } catch {}
+  }
+  if (Math.random() < 0.22) triggerRandomEvent();
+}, 30000);
+
+// ================= COLOCACIÓN, MEJORA Y RECONSTRUCCIÓN DE EDIFICACIONES =================
+let placingState = null;
+
+function isPositionValid(x, z, radius) {
+  if (Math.hypot(x, z) > 33) return false;
+  return !myBuildings.some(b => Math.hypot(b.x - x, b.z - z) < (radius + BUILDINGS_DB[b.type].radius + 0.9));
+}
+
+function enterPlacementMode(type) {
+  SoundFX.play("click");
+  const spec = BUILDINGS_DB[type];
+  if (spec.costCash && player.cash < spec.costCash) return showToast(`Necesitas $${spec.costCash}`);
+  if (spec.costGoods && player.goods < spec.costGoods) return showToast(`Necesitas ${spec.costGoods} de Mercancía`);
+
+  closeModals(); cancelPlacement();
+  const ghost = createBuildingMesh3D({ type, x: 0, z: 0 }, false);
+  ghost.traverse(c => { if (c.isMesh) { c.material = c.material.clone(); c.material.transparent = true; c.material.opacity = 0.65; } });
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(spec.radius * 0.85, spec.radius, 32),
+    new THREE.MeshBasicMaterial({ color: 0x2ecc71, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.08; ghost.add(ring);
+
+  placingState = { type, ghostGroup: ghost, ringMesh: ring, x: camTarget.x, z: camTarget.z, valid: true };
+  updateGhostPosition(camTarget.x, camTarget.z);
+  scene.add(ghost);
+
+  document.getElementById("main-bottom-bar").style.display = "none";
+  document.getElementById("place-hud").style.display = "block";
+  document.getElementById("place-label").textContent = `Colocando: ${spec.name} (Arrastra o toca el suelo)`;
+}
+
+function updateGhostPosition(x, z) {
+  if (!placingState) return;
+  placingState.x = x; placingState.z = z;
+  placingState.ghostGroup.position.set(x, 0, z);
+  placingState.valid = isPositionValid(x, z, BUILDINGS_DB[placingState.type].radius);
+  placingState.ringMesh.material.color.setHex(placingState.valid ? 0x2ecc71 : 0xe74c3c);
+}
+
+function cancelPlacement() {
+  if (placingState) { scene.remove(placingState.ghostGroup); placingState = null; }
+  document.getElementById("place-hud").style.display = "none";
+  document.getElementById("main-bottom-bar").style.display = "flex";
+}
+
+function confirmPlacement() {
+  if (!placingState || !placingState.valid) return showToast("Espacio bloqueado o fuera del valle");
+  const { type, x, z } = placingState;
+  const spec = BUILDINGS_DB[type];
+  if (spec.costCash) player.cash -= spec.costCash;
+  if (spec.costGoods) player.goods -= spec.costGoods;
+  updateHUD(); cancelPlacement();
+
+  const timerObj = {
+    id: Date.now(),
+    label: `Construyendo ${spec.name}`,
+    endTime: Date.now() + spec.buildSec * 1000,
+    actionType: "build",
+    payload: { type, x, z }
+  };
+  timerObj.onComplete = hydrateTimerCallback(timerObj);
+  activeTimers.push(timerObj);
+  saveGameProgress();
+  SoundFX.play("build");
+  showToast(`Construyendo ${spec.name} (${spec.buildSec}s)...`);
+}
+
+function rebuildDestroyedBuilding(bId) {
+  const b = myBuildings.find(item => item.id === bId);
+  if (!b || !b.destroyed) return;
+  const spec = BUILDINGS_DB[b.type];
+  const repairCost = getBuildingRepairCost(b);
+  if (player.cash < repairCost) return showToast(`Necesitas $${repairCost} para reconstruir ${spec.name}`);
+
+  player.cash -= repairCost;
+  b.destroyed = false;
+  b.burning = false;
+  b.hp = getBuildingMaxHp(b);
+  rebuildBase3D();
+  updateHUD();
+  saveGameProgress();
+  SoundFX.play("build");
+  showToast(`¡${spec.name} reconstruida por $${repairCost}!`);
+  openModal("upgrade");
+}
+
+function rebuildAllDestroyed() {
+  const ruined = myBuildings.filter(b => b.destroyed);
+  if (ruined.length === 0) return;
+  const totalCost = ruined.reduce((acc, b) => acc + getBuildingRepairCost(b), 0);
+  if (player.cash < totalCost) return showToast(`Necesitas $${totalCost} para reconstruir todo`);
+
+  player.cash -= totalCost;
+  ruined.forEach(b => {
+    b.destroyed = false;
+    b.burning = false;
+    b.hp = getBuildingMaxHp(b);
+  });
+  rebuildBase3D();
+  updateHUD();
+  saveGameProgress();
+  SoundFX.play("build");
+  showToast(`¡Todas las edificaciones reconstruidas por $${totalCost}!`);
+  openModal("upgrade");
+}
+
+function startUpgradeBuilding(bId) {
+  const b = myBuildings.find(item => item.id === bId);
+  if (!b) return;
+  if (b.destroyed) return showToast("Primero debes reconstruir esta edificación");
+  const spec = BUILDINGS_DB[b.type];
+  const cost = Math.floor(spec.upgCash * Math.pow(1.65, b.lvl - 1));
+  const upgSec = 25 + b.lvl * 15;
+  if (player.cash < cost) return showToast(`Necesitas $${cost} para mejorar`);
+  player.cash -= cost; updateHUD(); closeModals();
+
+  const timerObj = {
+    id: Date.now() + Math.random(),
+    label: `Mejorando ${spec.name} a Nv.${b.lvl + 1}`,
+    endTime: Date.now() + upgSec * 1000,
+    actionType: "upgrade",
+    payload: { bId }
+  };
+  timerObj.onComplete = hydrateTimerCallback(timerObj);
+  activeTimers.push(timerObj);
+  saveGameProgress();
+  SoundFX.play("build");
+  showToast(`Mejorando ${spec.name} (${upgSec}s)...`);
+}
+
+function startTrainTroop(tKey) {
+  const spec = TROOPS_DB[tKey];
+  if (player.level < spec.minLvl) return showToast(`Requiere Nivel ${spec.minLvl}`);
+  const total = player.troops.pistolero + player.troops.metralleta + player.troops.granadero;
+  if (total >= getMaxTroops()) return showToast(`Límite de ${getMaxTroops()} sicarios en Nivel ${player.level}`);
+  if (player.cash < spec.cost) return showToast(`Necesitas $${spec.cost}`);
+
+  player.cash -= spec.cost; updateHUD();
+  const timerObj = {
+    id: Date.now() + Math.random(),
+    label: `Entrenando ${spec.name}`,
+    endTime: Date.now() + spec.trainSec * 1000,
+    actionType: "train",
+    payload: { tKey }
+  };
+  timerObj.onComplete = hydrateTimerCallback(timerObj);
+  activeTimers.push(timerObj);
+  saveGameProgress();
+  SoundFX.play("click");
+  showToast(`Entrenando ${spec.name} (${spec.trainSec}s)...`);
+}
+
+function finishTimerNow(id) {
+  if (player.gold < 3) return showToast("Necesitas 3 de Oro");
+  const idx = activeTimers.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  player.gold -= 3;
+  activeTimers.splice(idx, 1)[0].onComplete();
+  updateHUD(); saveGameProgress();
+}
+
+setInterval(() => {
+  if (mode === "BASE") {
+    myBuildings.forEach(b => {
+      if (b.burning || b.destroyed) return;
+      const s = BUILDINGS_DB[b.type];
+      if (s.prod) b.stored += s.rate * (1 + (b.lvl - 1) * 0.35) * 0.25 * ADMIN_CONFIG.economyMultiplier;
+    });
+
+    // Verificar cuenta regresiva del incendio
+    if (currentEvent && currentEvent.type === "FIRE") {
+      const leftSec = Math.max(0, Math.ceil((currentEvent.deadline - Date.now()) / 1000));
+      document.getElementById("event-banner-txt").innerHTML = `${ICONS.fire} ¡INCENDIO EN PLANTACIÓN! (${leftSec}s)`;
+      if (leftSec <= 0) {
+        const farm = myBuildings.find(b => b.id === currentEvent.buildingId);
+        currentEvent = null;
+        document.getElementById("event-banner").style.display = "none";
+        if (farm) destroyBaseBuilding(farm);
+      }
+    }
+  }
+  const now = Date.now();
+  for (let i = activeTimers.length - 1; i >= 0; i--) {
+    if (now >= activeTimers[i].endTime) activeTimers.splice(i, 1)[0].onComplete();
+  }
+  renderTimersHUD();
+}, 1000);
+
+setInterval(() => { if (mode === "BASE") saveGameProgress(); }, 15000);
+
+function renderTimersHUD() {
+  const box = document.getElementById("timers-box");
+  if (mode !== "BASE" || activeTimers.length === 0) { box.innerHTML = ""; return; }
+  const now = Date.now();
+  box.innerHTML = activeTimers.map(t => {
+    const left = Math.max(0, Math.ceil((t.endTime - now) / 1000));
+    return `<div class="timer-pill"><span>${t.label}: <b>${left}s</b></span><button class="btn-skip" onclick="finishTimerNow(${t.id})">3 ${ICONS.gold}</button></div>`;
+  }).join("");
+}
+
+function collectAll() {
+  let c = 0, g = 0;
+  myBuildings.forEach(b => {
+    if (b.destroyed) return;
+    const s = BUILDINGS_DB[b.type];
+    if (s.prod && b.stored >= 1) {
+      const amt = Math.floor(b.stored);
+      if (s.prod === "cash") { player.cash += amt; c += amt; }
+      else { player.goods += amt; g += amt; }
+      b.stored = 0;
+    }
+  });
+  if (c || g) {
+    SoundFX.play("cash");
+    addXP(20);
+    showToast(`Recogido: +$${c} Efectivo y +${g} Mercancía`);
+  } else {
+    SoundFX.play("click");
+    const hasRuins = myBuildings.some(b => b.destroyed);
+    showToast(hasRuins ? "Tienes edificaciones en ruinas sin producir" : "Aún no hay suficientes recursos acumulados");
+  }
+  updateHUD(); saveGameProgress();
+}
+
+// ================= MULTIJUGADOR ONLINE: ASALTOS PvP CON OBJETIVOS ELEGIBLES =================
+async function openRivalRadar() {
+  SoundFX.play("click");
+  const total = player.troops.pistolero + player.troops.metralleta + player.troops.granadero;
+  if (total <= 0) return showToast("Recluta sicarios antes de atacar");
+
+  if (ADMIN_CONFIG.firebaseDbUrl) {
+    try {
+      const res = await fetch(`${ADMIN_CONFIG.firebaseDbUrl}/players.json`);
+      const data = await res.json();
+      if (data) onlinePlayersDirectory = Object.values(data);
+    } catch {}
+  }
+  openModal("rivals");
+}
+
+let activeRivalTarget = null, rivalBuildings = [], rivalDefenders = [], invadingTroops = [], raidStock = {}, selectedTroop = "pistolero";
+let selectedTargetBuilding = null;
+
+function setPriorityTargetBuilding(b) {
+  if (!b || b.hp <= 0) return;
+  selectedTargetBuilding = b;
+  rivalBuildings.forEach(item => {
+    if (item.mesh && item.mesh.userData.targetRing) {
+      item.mesh.userData.targetRing.visible = (item === b);
+    }
+    if (item.mesh && item.mesh.userData.hpSprite) {
+      updateHealthBarSprite(item.mesh.userData.hpSprite, item.hp, item.maxHp, item === b);
+    }
+  });
+  SoundFX.play("click");
+  showToast(`Objetivo fijado: ${BUILDINGS_DB[b.type].name}`);
+}
+
+function attackSelectedRival(rivalId) {
+  SoundFX.play("click");
+  const rival = onlinePlayersDirectory.find(r => r.id === rivalId);
+  if (!rival) return;
+
+  activeRivalTarget = rival;
+  selectedTargetBuilding = null;
+  cancelPlacement(); mode = "RAID"; closeModals();
+  document.getElementById("base-hud").style.display = "none";
+  document.getElementById("raid-hud").style.display = "block";
+  document.getElementById("raid-target-name").innerHTML = `${ICONS.attack} ASALTANDO: ${rival.name.toUpperCase()} (Nv.${rival.level})`;
+  document.getElementById("timers-box").innerHTML = "";
+
+  raidStock = { ...player.troops }; invadingTroops = []; rivalDefenders = [];
+  while (worldGroup.children.length) worldGroup.remove(worldGroup.children[0]);
+
+  rivalBuildings = rival.layout.map(b => {
+    const fallbackHp = BUILDINGS_DB[b.type] ? BUILDINGS_DB[b.type].baseHp : 500;
+    const realHp = b.hp || fallbackHp;
+    return { ...b, hp: realHp, maxHp: realHp, cd: 0 };
+  });
+
+  rivalBuildings.forEach(b => {
+    b.mesh = createBuildingMesh3D(b, true);
+    updateHealthBarSprite(b.mesh.userData.hpSprite, b.hp, b.maxHp, false);
+    worldGroup.add(b.mesh);
+  });
+
+  const defCount = 2 + Math.min(5, rival.level);
+  for (let i = 0; i < defCount; i++) {
+    const defType = i % 3 === 0 ? "metralleta" : "pistolero";
+    const defSpec = TROOPS_DB[defType];
+    const defHp = defSpec.hp + rival.level * 14;
+    const mesh = createRealisticSicario3D(0x781d1d, 0x111111, defType, 0xe74c3c, true);
+    const px = -7 + i * 3.2, pz = 2.5;
+    mesh.position.set(px, 0, pz); worldGroup.add(mesh);
+    rivalDefenders.push({
+      mesh, x: px, z: pz,
+      hp: defHp, maxHp: defHp, defense: defSpec.defense,
+      dmg: defSpec.dmg, fireRate: defSpec.fireRate + 6,
+      range: defSpec.range, speed: 0.032, cd: 0
+    });
+  }
+  renderRaidDock();
+}
+
+function renderRaidDock() {
+  const bar = document.getElementById("troop-bar");
+  bar.innerHTML = "";
+  Object.keys(TROOPS_DB).forEach(k => {
+    const t = TROOPS_DB[k];
+    const qty = raidStock[k] || 0;
+    const div = document.createElement("div");
+    div.className = "t-slot" + (selectedTroop === k ? " active" : "");
+    div.innerHTML = `<div>${ICONS[k]}</div><div style="font-size:9px;font-weight:800;">${t.name}</div><div style="font-size:10px;font-weight:900;color:#f1c40f;">x${qty}</div>`;
+    div.onclick = () => { selectedTroop = k; SoundFX.play("click"); renderRaidDock(); };
+    bar.appendChild(div);
+  });
+}
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+function getGroundHit(clientX, clientY) {
+  pointer.x = (clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObject(ground);
+  return hits.length > 0 ? hits[0].point : null;
+}
+
+function handleWorldTap(clientX, clientY) {
+  closeModals();
+  const pt = getGroundHit(clientX, clientY);
+  if (!pt) return;
+
+  if (mode === "BASE" && placingState) { updateGhostPosition(pt.x, pt.z); return; }
+
+  if (mode === "BASE" && !placingState) {
+    const tappedRuins = myBuildings.find(b => b.destroyed && Math.hypot(pt.x - b.x, pt.z - b.z) <= BUILDINGS_DB[b.type].radius + 0.8);
+    if (tappedRuins) {
+      openModal("upgrade");
+      showToast(`${BUILDINGS_DB[tappedRuins.type].name} en ruinas: toca Reconstruir`);
+      return;
+    }
+  }
+
+  if (mode === "RAID") {
+    const tappedBuilding = rivalBuildings.find(b => b.hp > 0 && Math.hypot(pt.x - b.x, pt.z - b.z) <= BUILDINGS_DB[b.type].radius + 0.9);
+    if (tappedBuilding) {
+      setPriorityTargetBuilding(tappedBuilding);
+      return;
+    }
+
+    if (pt.z < 7) return showToast("Despliega tropas al sur o toca un edificio para atacarlo");
+    if ((raidStock[selectedTroop] || 0) <= 0) return showToast("No quedan sicarios de este tipo");
+
+    raidStock[selectedTroop]--; player.troops[selectedTroop]--;
+    const spec = TROOPS_DB[selectedTroop];
+    const mesh = createRealisticSicario3D(spec.shirt, spec.hat, selectedTroop, 0x2ecc71, true);
+    mesh.position.set(pt.x, 0, pt.z); worldGroup.add(mesh);
+    invadingTroops.push({
+      type: selectedTroop, mesh, x: pt.x, z: pt.z,
+      hp: spec.hp, maxHp: spec.hp, defense: spec.defense, cd: 0
+    });
+    SoundFX.play("click");
+    renderRaidDock();
+    saveGameProgress();
+  }
+}
+
+function updateRaidLogic() {
+  if (selectedTargetBuilding && selectedTargetBuilding.hp <= 0) {
+    selectedTargetBuilding = null;
+  }
+
+  invadingTroops.forEach(t => {
+    if (t.hp <= 0) return;
+    const spec = TROOPS_DB[t.type];
+    let target = null, minDist = 999, targetIsBldg = false;
+
+    if (selectedTargetBuilding && selectedTargetBuilding.hp > 0) {
+      target = selectedTargetBuilding;
+      minDist = Math.hypot(target.x - t.x, target.z - t.z);
+      targetIsBldg = true;
+    } else {
+      rivalDefenders.forEach(d => {
+        if (d.hp <= 0) return;
+        const dist = Math.hypot(d.x - t.x, d.z - t.z);
+        if (dist < minDist) { minDist = dist; target = d; targetIsBldg = false; }
+      });
+      if (!target) {
+        rivalBuildings.forEach(b => {
+          if (b.hp <= 0) return;
+          const dist = Math.hypot(b.x - t.x, b.z - t.z);
+          if (dist < minDist) { minDist = dist; target = b; targetIsBldg = true; }
+        });
+      }
+    }
+
+    if (!target) return;
+
+    const stopDist = targetIsBldg ? (spec.range + BUILDINGS_DB[target.type].radius * 0.7) : spec.range;
+    if (minDist > stopDist) {
+      moveWithObstacleAvoidance(t, target.x, target.z, spec.speed, rivalBuildings);
+      animateCharacterWalk(t.mesh, true);
+    } else {
+      t.mesh.rotation.y = Math.atan2(target.x - t.x, target.z - t.z);
+      animateCharacterWalk(t.mesh, false);
+      t.cd--;
+      if (t.cd <= 0) {
+        t.cd = spec.fireRate;
+        const finalDmg = targetIsBldg ? Math.floor(spec.dmg * spec.bldgBonus) : Math.floor(spec.dmg * (1 - (target.defense || 0)));
+        target.hp -= finalDmg;
+
+        spawnBulletTracer(t.x, t.z, target.x, target.z, t.type === "granadero" ? 0xff7675 : 0xffeaa7);
+        SoundFX.play(t.type === "granadero" ? "explosion" : (t.type === "metralleta" ? "rifle" : "pistol"));
+
+        if (targetIsBldg && target.mesh.userData.hpSprite) {
+          updateHealthBarSprite(target.mesh.userData.hpSprite, target.hp, target.maxHp, target === selectedTargetBuilding);
+        } else if (!targetIsBldg && target.mesh.userData.hpSprite) {
+          updateHealthBarSprite(target.mesh.userData.hpSprite, target.hp, target.maxHp);
+        }
+
+        if (target.hp <= 0) {
+          target.mesh.visible = false;
+          if (targetIsBldg) SoundFX.play("explosion");
+        }
+      }
+    }
+  });
+
+  rivalDefenders.forEach(d => {
+    if (d.hp <= 0) return;
+    let target = null, minDist = 999;
+    invadingTroops.forEach(t => {
+      if (t.hp <= 0) return;
+      const dist = Math.hypot(t.x - d.x, t.z - d.z);
+      if (dist < minDist) { minDist = dist; target = t; }
+    });
+    if (!target) { animateCharacterWalk(d.mesh, false); return; }
+
+    if (minDist > d.range) {
+      moveWithObstacleAvoidance(d, target.x, target.z, d.speed, rivalBuildings);
+      animateCharacterWalk(d.mesh, true);
+    } else {
+      d.mesh.rotation.y = Math.atan2(target.x - d.x, target.z - d.z);
+      animateCharacterWalk(d.mesh, false);
+      d.cd--;
+      if (d.cd <= 0) {
+        d.cd = d.fireRate;
+        const mitigatedDmg = Math.max(2, Math.floor(d.dmg * (1 - (target.defense || 0))));
+        target.hp -= mitigatedDmg;
+        spawnBulletTracer(d.x, d.z, target.x, target.z, 0xff7675);
+        if (target.mesh.userData.hpSprite) {
+          updateHealthBarSprite(target.mesh.userData.hpSprite, target.hp, target.maxHp);
+        }
+        if (target.hp <= 0) target.mesh.visible = false;
+      }
+    }
+  });
+
+  rivalBuildings.forEach(b => {
+    if (b.hp <= 0 || b.type !== "torreta") return;
+    b.cd = (b.cd || 0) - 1;
+    if (b.cd <= 0) {
+      const target = invadingTroops.find(t => t.hp > 0 && Math.hypot(t.x - b.x, t.z - b.z) <= 10.5);
+      if (target) {
+        b.cd = 36;
+        const mitigatedDmg = Math.max(3, Math.floor(22 * (1 - (target.defense || 0))));
+        target.hp -= mitigatedDmg;
+        spawnBulletTracer(b.x, b.z, target.x, target.z, 0xff4757);
+        SoundFX.play("rifle");
+        if (target.mesh.userData.hpSprite) {
+          updateHealthBarSprite(target.mesh.userData.hpSprite, target.hp, target.maxHp);
+        }
+        if (target.hp <= 0) target.mesh.visible = false;
+      }
+    }
+  });
+
+  const finca = rivalBuildings.find(b => b.type === "finca");
+  if (finca && finca.hp <= 0) endRaid(true);
+}
+
+function endRaid(victory) {
+  mode = "BASE";
+  selectedTargetBuilding = null;
+  document.getElementById("raid-hud").style.display = "none";
+  document.getElementById("base-hud").style.display = "block";
+  invadingTroops.forEach(t => { if (t.hp > 0) player.troops[t.type]++; });
+  invadingTroops = []; rebuildBase3D();
+
+  if (victory && activeRivalTarget) {
+    const stolenCash = Math.floor(activeRivalTarget.lootCash * ADMIN_CONFIG.economyMultiplier);
+    const stolenGoods = Math.floor(activeRivalTarget.lootGoods * ADMIN_CONFIG.economyMultiplier);
+    player.cash += stolenCash; player.goods += stolenGoods; addXP(280);
+    SoundFX.play("cash");
+    showToast(`¡SAQUEO EXITOSO! Robaste $${stolenCash} y ${stolenGoods} Mercancía`);
+  } else {
+    SoundFX.play("click");
+    showToast("Regresaste a tu Hacienda");
+  }
+  updateHUD();
+  saveGameProgress();
+}
+
+// ================= CONTROLES TÁCTILES =================
+let lastX = 0, lastY = 0, moved = false, pinchStart = 0, draggingBuilding = false;
+renderer.domElement.addEventListener("touchstart", e => {
+  if (e.touches.length === 1) {
+    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; moved = false; draggingBuilding = false;
+    if (placingState) {
+      const pt = getGroundHit(lastX, lastY);
+      if (pt && Math.hypot(pt.x - placingState.x, pt.z - placingState.z) < 5.5) draggingBuilding = true;
+    }
+  } else if (e.touches.length === 2) {
+    pinchStart = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  }
+}, { passive: false });
+
+renderer.domElement.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+    const dx = cx - lastX, dy = cy - lastY;
+    if (Math.hypot(dx, dy) > 6) moved = true;
+    if (draggingBuilding && placingState) {
+      const pt = getGroundHit(cx, cy);
+      if (pt) updateGhostPosition(pt.x, pt.z);
+    } else if (moved) {
+      camTarget.x = Math.max(-45, Math.min(45, camTarget.x - dx * 0.05));
+      camTarget.z = Math.max(-45, Math.min(45, camTarget.z - dy * 0.05));
+      lastX = cx; lastY = cy;
+    }
+  } else if (e.touches.length === 2) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    if (pinchStart > 0) camDist = Math.max(16, Math.min(58, camDist - (d - pinchStart) * 0.06));
+    pinchStart = d;
+  }
+}, { passive: false });
+
+renderer.domElement.addEventListener("touchend", e => {
+  if (!moved && e.changedTouches.length === 1) handleWorldTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  draggingBuilding = false; pinchStart = 0;
+});
+renderer.domElement.addEventListener("click", e => handleWorldTap(e.clientX, e.clientY));
+
+// ================= ACCESO SECRETO DE ADMINISTRADOR =================
+let profileTapCounter = 0;
+let profileTapReset = null;
+
+function handleProfileTap() {
+  SoundFX.play("click");
+  if (ADMIN_CONFIG.isAdminMode) {
+    openModal("admin");
+    return;
+  }
+  profileTapCounter++;
+  clearTimeout(profileTapReset);
+  profileTapReset = setTimeout(() => { profileTapCounter = 0; }, 1200);
+
+  if (profileTapCounter >= 5) {
+    profileTapCounter = 0;
+    const pass = prompt("Acceso Administrativo:");
+    if (pass === ADMIN_CONFIG.secretKey) {
+      ADMIN_CONFIG.isAdminMode = true;
+      openModal("admin");
+    }
+  } else {
+    openModal("ranks");
+  }
+}
+
+function sendTargetedEventToUser() {
+  const targetUserId = document.getElementById("adm-target-user").value;
+  const evType = document.getElementById("adm-target-event").value;
+
+  if (targetUserId === player.id) {
+    closeModals();
+    triggerRandomEvent(evType);
+    return;
+  }
+
+  const targetObj = onlinePlayersDirectory.find(u => u.id === targetUserId);
+  if (targetObj) {
+    targetObj.pendingEvent = evType;
+    if (ADMIN_CONFIG.firebaseDbUrl) {
+      fetch(`${ADMIN_CONFIG.firebaseDbUrl}/players/${targetUserId}/pendingEvent.json`, {
+        method: "PUT", body: JSON.stringify(evType)
+      }).catch(() => {});
+    }
+    showToast(`Evento (${evType}) enviado a ${targetObj.name}`);
+  }
+}
+
+function saveAdminInfra() {
+  ADMIN_CONFIG.xpMultiplier = parseFloat(document.getElementById("adm-xp-mult").value) || 1.0;
+  ADMIN_CONFIG.economyMultiplier = parseFloat(document.getElementById("adm-eco-mult").value) || 1.0;
+  ADMIN_CONFIG.firebaseDbUrl = document.getElementById("adm-fb-url").value.trim();
+  showToast("Infraestructura y balance guardados");
+}
+
+function openModal(id) {
+  SoundFX.play("click");
+  closeModals();
+  if (id === "build") {
+    document.getElementById("build-list").innerHTML = ["plantacion", "boveda", "torreta", "barracon"].map(k => {
+      const s = BUILDINGS_DB[k];
+      const cost = s.costCash ? `$${s.costCash} ${ICONS.cash}` : `${s.costGoods} ${ICONS.goods}`;
+      return `<div class="card"><div><h4>${ICONS[k]} ${s.name}</h4><p>${s.desc}<br>HP Base: ${s.baseHp} • ${s.buildSec}s</p></div><div class="btn-gold" onclick="enterPlacementMode('${k}')">Colocar (${cost})</div></div>`;
+    }).join("");
+  } else if (id === "upgrade") {
+    const ruinedList = myBuildings.filter(b => b.destroyed);
+    let topBannerHtml = "";
+    if (ruinedList.length > 0) {
+      const totalRep = ruinedList.reduce((acc, b) => acc + getBuildingRepairCost(b), 0);
+      topBannerHtml = `
+        <div style="background:rgba(192,57,43,0.35);border:1px solid #ff7675;border-radius:9px;padding:8px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="font-size:10px;color:#ffd2d2;"><b>${ruinedList.length} edificación(es) destruida(s)</b><br><span style="font-size:9px;">No producen ni defienden hasta reconstruirse</span></div>
+          <button class="btn-repair" onclick="rebuildAllDestroyed()">Reparar Todo ($${totalRep})</button>
+        </div>
+      `;
+    }
+
+    document.getElementById("upgrade-list").innerHTML = topBannerHtml + myBuildings.map(b => {
+      const s = BUILDINGS_DB[b.type];
+      if (b.destroyed) {
+        const repCost = getBuildingRepairCost(b);
+        return `<div class="rival-row ruined"><div><div style="font-size:11px;font-weight:900;color:#ff7675;display:flex;align-items:center;gap:5px;">${ICONS[b.type]} ${s.name} (DESTRUIDA)</div><div style="font-size:9px;color:#f5b7b1;">Nivel ${b.lvl} • En ruinas (0 HP)</div></div><button class="btn-repair" onclick="rebuildDestroyedBuilding(${b.id})">Reconstruir ($${repCost})</button></div>`;
+      }
+      const cost = Math.floor(s.upgCash * Math.pow(1.65, b.lvl - 1));
+      const curHp = getBuildingMaxHp(b);
+      return `<div class="rival-row"><div><div style="font-size:11px;font-weight:800;color:#f5e6c8;display:flex;align-items:center;gap:5px;">${ICONS[b.type]} ${s.name} (Nivel ${b.lvl})</div><div style="font-size:9px;color:#b89f72;">HP: ${curHp} • +35% prod/def y +${240 * (b.lvl + 1)} XP</div></div><button class="btn-gold" style="padding:6px 10px;" onclick="startUpgradeBuilding(${b.id})">Mejorar ($${cost})</button></div>`;
+    }).join("");
+  } else if (id === "sicarios") {
+    document.getElementById("sicario-list").innerHTML = Object.keys(TROOPS_DB).map(k => {
+      const t = TROOPS_DB[k];
+      const locked = player.level < t.minLvl;
+      return `<div class="card"><div><h4>${ICONS[k]} ${t.name} (${player.troops[k]})</h4><p>Atq: ${t.dmg} | Def: ${Math.round(t.defense*100)}% | HP: ${t.hp}<br>${t.desc}</p></div><div class="btn-gold" style="${locked ? 'opacity:0.45' : ''}" onclick="startTrainTroop('${k}')">${locked ? 'Req. Nv.' + t.minLvl : 'Reclutar ($' + t.cost + ')'}</div></div>`;
+    }).join("");
+  } else if (id === "rivals") {
+    const rivalsOnly = onlinePlayersDirectory.filter(r => r.id !== player.id);
+    document.getElementById("rivals-list").innerHTML = rivalsOnly.map(r =>
+      `<div class="rival-row"><div><div style="font-size:11px;font-weight:900;color:#f5d076;">${r.name} (Nv.${r.level})</div><div style="font-size:9px;color:#cbb692;display:flex;align-items:center;gap:6px;">Botín: $${r.lootCash} ${ICONS.cash} • ${r.lootGoods} ${ICONS.goods}</div></div><button class="btn-gold" style="background:#c0392b;color:#fff;border-color:#ff7675;padding:6px 10px;" onclick="attackSelectedRival('${r.id}')">Atacar</button></div>`
+    ).join("");
+  } else if (id === "ranks") {
+    document.getElementById("ranks-list").innerHTML = RANKS.map((r, i) =>
+      `<div style="padding:3px 0;display:flex;align-items:center;gap:6px;${Math.floor((player.level-1)/10)===i ? 'color:#f1c40f;font-weight:900;' : ''}">${ICONS.rank} Rango ${i+1}: ${r}</div>`
+    ).join("");
+  } else if (id === "admin" && ADMIN_CONFIG.isAdminMode) {
+    const userOptions = onlinePlayersDirectory.map(u => `<option value="${u.id}">${u.name} (Nv.${u.level})</option>`).join("");
+    document.getElementById("admin-content").innerHTML = `
+      <div style="font-size:10px;font-weight:900;color:#2ecc71;margin-bottom:6px;">● MODO SUPERADMINISTRADOR ACTIVO</div>
+      <div style="font-size:10px;color:#f5d076;font-weight:800;margin-bottom:4px;">Enviar Evento Dirigido a un Usuario Específico:</div>
+      <select id="adm-target-user" class="admin-inp">${userOptions}</select>
+      <select id="adm-target-event" class="admin-inp">
+        <option value="FIRE">Incendio en Plantaciones</option>
+        <option value="POLICE">Redada de la Policía</option>
+      </select>
+      <button class="btn-gold" style="width:100%;margin-bottom:10px;" onclick="sendTargetedEventToUser()">Disparar Evento al Jugador</button>
+
+      <div style="font-size:10px;color:#f5d076;font-weight:800;margin-bottom:4px;">Control Global de Economía & Servidor Firebase:</div>
+      <div class="grid-2">
+        <div><label style="font-size:9px;">Multiplicador XP:</label><input type="number" step="0.1" id="adm-xp-mult" class="admin-inp" value="${ADMIN_CONFIG.xpMultiplier}" /></div>
+        <div><label style="font-size:9px;">Multiplicador Economía:</label><input type="number" step="0.1" id="adm-eco-mult" class="admin-inp" value="${ADMIN_CONFIG.economyMultiplier}" /></div>
+      </div>
+      <input type="text" id="adm-fb-url" class="admin-inp" placeholder="URL Firebase Realtime DB" value="${ADMIN_CONFIG.firebaseDbUrl}" />
+      <button class="btn-gold" style="width:100%;" onclick="saveAdminInfra()">Guardar Configuración del Servidor</button>
+    `;
+  }
+  document.getElementById("modal-" + id).classList.add("open");
+}
+function closeModals() { document.querySelectorAll(".sheet").forEach(s => s.classList.remove("open")); }
+
+function updateHUD() {
+  const total = player.troops.pistolero + player.troops.metralleta + player.troops.granadero;
+  const req = xpForNextLevel(player.level);
+  document.getElementById("ui-username").textContent = player.name || "Patrón";
+  document.getElementById("ui-lvl").textContent = player.level;
+  document.getElementById("ui-rank").textContent = getCurrentRankName();
+  document.getElementById("ui-xp-bar").style.width = `${Math.min(100, (player.xp / req) * 100)}%`;
+  document.getElementById("ui-squad").textContent = `Sicarios: ${total}/${getMaxTroops()} • Rangos ▸`;
+  document.getElementById("ui-cash").textContent = player.cash.toLocaleString();
+  document.getElementById("ui-goods").textContent = player.goods.toLocaleString();
+  document.getElementById("ui-gold").textContent = player.gold.toLocaleString();
+
+  const ruinedCount = myBuildings.filter(b => b.destroyed).length;
+  const badge = document.getElementById("badge-ruins");
+  if (ruinedCount > 0) {
+    badge.style.display = "flex";
+    badge.textContent = ruinedCount;
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(window.toastT);
+  window.toastT = setTimeout(() => t.style.opacity = 0, 2600);
+}
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ================= BUCLE PRINCIPAL =================
+function animate() {
+  requestAnimationFrame(animate);
+  camera.position.set(camTarget.x, camDist * 0.68, camTarget.z + camDist * 0.85);
+  camera.lookAt(camTarget);
+
+  if (mode === "BASE") {
+    const activeCops = policeRaiders.filter(p => p.hp > 0);
+    baseDefenders.forEach(d => {
+      if (d.hp <= 0) return;
+      if (activeCops.length > 0) {
+        let nearestCop = activeCops[0], minDist = 999;
+        activeCops.forEach(c => { const dist = Math.hypot(c.x - d.x, c.z - d.z); if (dist < minDist) { minDist = dist; nearestCop = c; } });
+        if (minDist > d.range) {
+          moveWithObstacleAvoidance(d, nearestCop.x, nearestCop.z, d.speed, myBuildings);
+          animateCharacterWalk(d.mesh, true);
+        } else {
+          d.mesh.rotation.y = Math.atan2(nearestCop.x - d.x, nearestCop.z - d.z);
+          animateCharacterWalk(d.mesh, false);
+          d.cd--;
+          if (d.cd <= 0) {
+            d.cd = d.fireRate; nearestCop.hp -= d.dmg;
+            spawnBulletTracer(d.x, d.z, nearestCop.x, nearestCop.z, 0xffeaa7);
+            SoundFX.play(d.type === "granadero" ? "explosion" : "pistol");
+            if (nearestCop.mesh.userData.hpSprite) {
+              updateHealthBarSprite(nearestCop.mesh.userData.hpSprite, nearestCop.hp, nearestCop.maxHp);
+            }
+            if (nearestCop.hp <= 0) nearestCop.mesh.visible = false;
+          }
+        }
+      } else {
+        if (d.mesh.userData.hpSprite && d.mesh.userData.hpSprite.visible) {
+          d.mesh.userData.hpSprite.visible = false;
+        }
+        const distToWp = Math.hypot(d.tx - d.x, d.tz - d.z);
+        if (distToWp < 1.3) {
+          const nextWp = pickValidWaypoint();
+          d.tx = nextWp.x; d.tz = nextWp.z;
+        } else {
+          moveWithObstacleAvoidance(d, d.tx, d.tz, d.speed, myBuildings);
+          animateCharacterWalk(d.mesh, true);
+        }
+      }
+    });
+
+    if (currentEvent && currentEvent.type === "POLICE") {
+      const aliveCops = policeRaiders.filter(p => p.hp > 0);
+      if (aliveCops.length === 0) {
+        currentEvent = null;
+        document.getElementById("event-banner").style.display = "none";
+        rebuildBase3D();
+        addXP(220); showToast("¡Redada policial repelida con éxito! (+XP)");
+      } else {
+        aliveCops.forEach(cop => {
+          const aliveDefs = baseDefenders.filter(def => def.hp > 15);
+          const intactBldgs = myBuildings.filter(b => !b.destroyed && b.hp > 0);
+
+          let target = null, minDist = 999, isDef = false;
+          aliveDefs.forEach(def => {
+            const dist = Math.hypot(def.x - cop.x, def.z - cop.z);
+            if (dist < minDist) { minDist = dist; target = def; isDef = true; }
+          });
+
+          if (!target && intactBldgs.length > 0) {
+            intactBldgs.forEach(b => {
+              const dist = Math.hypot(b.x - cop.x, b.z - cop.z);
+              if (dist < minDist) { minDist = dist; target = b; isDef = false; }
+            });
+          }
+
+          if (!target) return;
+
+          const stopDist = isDef ? cop.range : (cop.range + BUILDINGS_DB[target.type].radius * 0.65);
+          if (minDist > stopDist) {
+            moveWithObstacleAvoidance(cop, target.x, target.z, cop.speed, myBuildings);
+            animateCharacterWalk(cop.mesh, true);
+          } else {
+            cop.mesh.rotation.y = Math.atan2(target.x - cop.x, target.z - cop.z);
+            animateCharacterWalk(cop.mesh, false);
+            cop.cd--;
+            if (cop.cd <= 0) {
+              cop.cd = 38;
+              spawnBulletTracer(cop.x, cop.z, target.x, target.z, 0x3498db);
+              if (isDef) {
+                const dmgTaken = Math.max(2, Math.floor(cop.dmg * (1 - (target.defense || 0))));
+                target.hp = Math.max(15, target.hp - dmgTaken);
+                if (target.mesh.userData.hpSprite) {
+                  updateHealthBarSprite(target.mesh.userData.hpSprite, target.hp, target.maxHp);
+                }
+              } else {
+                target.hp -= cop.dmg * 1.4;
+                if (target.mesh && target.mesh.userData.hpSprite) {
+                  updateHealthBarSprite(target.mesh.userData.hpSprite, target.hp, getBuildingMaxHp(target));
+                }
+                if (target.hp <= 0) {
+                  destroyBaseBuilding(target);
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+  } else {
+    updateRaidLogic();
+  }
+
+  for (let i = activeTracers.length - 1; i >= 0; i--) {
+    activeTracers[i].life--;
+    if (activeTracers[i].life <= 0) {
+      worldGroup.remove(activeTracers[i].line);
+      activeTracers.splice(i, 1);
+    }
+  }
+  renderer.render(scene, camera);
+}
+
+if (!loadSavedGame()) {
+  updateHUD();
+}
+animate();
+</script>
+</body>
+</html>
